@@ -29,16 +29,13 @@ object LegacyService {
   object DataFetcher {
     def fetchAll(profile: String, success: Boolean): Future[FetchResult] = {
       if (success) Future.successful {
-        println("FETCH ALL")
         FetchResult(Seq("A", "B", "C"))
       } else {
-        println("SHOULD FAIL")
         Future.failed(new RuntimeException("Test exception"))
       }
     }
 
     def enrichWithPricingInformation(data: FetchResult, success: Boolean): Either[Set[SdpPublisherFailure], FetchResult] = {
-      println(s"ENRICH DATA: $data")
       if (success)
       Right(FetchResult(data.offers ++ Seq("E", "F")))
       else Left(Set(ReferenceOfferChainsBroken(Set(UnableToFindReferenceOffer("REF_OFF_ID_1")))))
@@ -52,7 +49,6 @@ object LegacyService {
         Seq[String],
         Seq[String]
     ) = {
-      println(s"MARSHALL DATA: $fetchResult")
       (
         fetchResult.offers ++ Seq("ENT"),
         fetchResult.offers ++ Seq("PRO"),
@@ -99,7 +95,30 @@ object LegacyService {
     _ <- ZIO.logInfo(s"Completed! $publishResult")
   } yield ()
 
+  private val program_2 = for {
+    _ <- ZIO.logInfo("TEST PROGRAM 2")
+    zio1 <- ZIO.fromFuture { implicit ec: ExecutionContext =>
+      Future.failed(new RuntimeException("test"))
+    }
+    zio2 <- ZIO.fromFuture { implicit ec: ExecutionContext =>
+      Future.failed(new RuntimeException("test 2"))
+    }
+  } yield zio2
+
+  private val program_3 =
+    for {
+      _ <- ZIO.logInfo("TEST PROGRAM 3")
+      _ <- ZIO.fromFuture { _ =>
+        Future.failed(new RuntimeException("test"))
+      }
+      _ <- ZIO.fromFuture { _ =>
+        Future.failed(new RuntimeException("test 2"))
+      }
+    } yield ()
+
   def main(args: Array[String]): Unit = {
+    val schedule =
+      Schedule.recurs(3) && Schedule.spaced(1.second)
     val runtime = {
       val logger = Runtime.removeDefaultLoggers >>> SLF4J.slf4j(
         format = zio.logging.LogFormat.colored
@@ -108,8 +127,8 @@ object LegacyService {
     }
     Unsafe.unsafe { implicit unsafe: Unsafe =>
       val _ = runtime.unsafe.fork(
-        program
-          .retry(Schedule.recurs(3) && Schedule.spaced(10.seconds))
+        program_3.debug("program")
+          .retry(schedule)
       )
     }
   }
