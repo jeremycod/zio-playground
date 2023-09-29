@@ -17,7 +17,7 @@ object LegacyService {
       s"Unable to find a reference offer in all the offers with an id of $refOfferId, cannot continue the finalPrice chain"
   }
 
-  trait SdpPublisherFailure {
+  trait SdpPublisherFailure extends Throwable {
     def msg: String
   }
 
@@ -30,14 +30,18 @@ object LegacyService {
     def fetchAll(profile: String, success: Boolean): Future[FetchResult] = {
       if (success) Future.successful {
         FetchResult(Seq("A", "B", "C"))
-      } else {
+      }
+      else {
         Future.failed(new RuntimeException("Test exception"))
       }
     }
 
-    def enrichWithPricingInformation(data: FetchResult, success: Boolean): Either[Set[SdpPublisherFailure], FetchResult] = {
+    def enrichWithPricingInformation(
+        data: FetchResult,
+        success: Boolean
+    ): Either[Set[SdpPublisherFailure], FetchResult] = {
       if (success)
-      Right(FetchResult(data.offers ++ Seq("E", "F")))
+        Right(FetchResult(data.offers ++ Seq("E", "F")))
       else Left(Set(ReferenceOfferChainsBroken(Set(UnableToFindReferenceOffer("REF_OFF_ID_1")))))
     }
 
@@ -68,17 +72,17 @@ object LegacyService {
         success: Boolean
     ): Future[List[Option[String]]] = {
       if (success)
-      Future.successful {
-        (ent.map(Some(_)) ++ ent2.map(Some(_)) ++ ent3.map(Some(_)) ++ ent4.map(Some(_)) ++ ent5.map(
-          Some(_)) ++ ent6.map(Some(_))).toList
-      } else Future.failed(new RuntimeException("Failed Produce"))
+        Future.successful {
+          (ent.map(Some(_)) ++ ent2.map(Some(_)) ++ ent3.map(Some(_)) ++ ent4.map(Some(_)) ++ ent5.map(
+            Some(_)) ++ ent6.map(Some(_))).toList
+        }
+      else Future.failed(new RuntimeException("Failed Produce"))
     }
   }
-  private val retry = Schedule.recurs(5) && Schedule.spaced(5.seconds)
+
   private val program: ZIO[Any, Object, Unit] = for {
     _ <- ZIO.logInfo("scheduled-job-start: genie-plus-sdp-scheduler")
-    data <- ZIO.fromFuture { implicit ec: ExecutionContext => DataFetcher.fetchAll("main", success = false) }
-      .retry(retry)
+    data <- ZIO.fromFuture { implicit ec: ExecutionContext => DataFetcher.fetchAll("main", success = true) }
     priceEnrichedData <- ZIO.fromEither(DataFetcher.enrichWithPricingInformation(data, success = true))
     marshalledData <- ZIO.succeed(DataFetcher.marshal(priceEnrichedData))
     publishResult <- ZIO.fromFuture { implicit ec: ExecutionContext =>
@@ -89,7 +93,7 @@ object LegacyService {
                          marshalledData._4,
                          marshalledData._5,
                          marshalledData._6,
-                         success = true)
+                         success = false)
                      }
     _ <- ZIO.foreachDiscard(publishResult.flatten)(m => ZIO.logInfo(m))
     _ <- ZIO.logInfo(s"Completed! $publishResult")
@@ -97,28 +101,21 @@ object LegacyService {
 
   private val program_2 = for {
     _ <- ZIO.logInfo("TEST PROGRAM 2")
-    zio1 <- ZIO.fromFuture { implicit ec: ExecutionContext =>
-      Future.failed(new RuntimeException("test"))
-    }
-    zio2 <- ZIO.fromFuture { implicit ec: ExecutionContext =>
-      Future.failed(new RuntimeException("test 2"))
-    }
+    zio1 <- ZIO.fromFuture { implicit ec: ExecutionContext => Future.failed(new RuntimeException("test")) }
+    zio2 <- ZIO.fromFuture { implicit ec: ExecutionContext => Future.failed(new RuntimeException("test 2")) }
   } yield zio2
 
   private val program_3 =
     for {
       _ <- ZIO.logInfo("TEST PROGRAM 3")
-      _ <- ZIO.fromFuture { _ =>
-        Future.failed(new RuntimeException("test"))
-      }
-      _ <- ZIO.fromFuture { _ =>
-        Future.failed(new RuntimeException("test 2"))
-      }
+      _ <- ZIO.fromFuture { _ => Future.failed(new RuntimeException("test")) }
+      _ <- ZIO.fromFuture { _ => Future.failed(new RuntimeException("test 2")) }
     } yield ()
 
   def main(args: Array[String]): Unit = {
     val schedule =
       Schedule.recurs(3) && Schedule.spaced(1.second)
+    val retry = Schedule.recurs(5) && Schedule.spaced(5.seconds)
     val runtime = {
       val logger = Runtime.removeDefaultLoggers >>> SLF4J.slf4j(
         format = zio.logging.LogFormat.colored
@@ -126,9 +123,9 @@ object LegacyService {
       Unsafe.unsafe { implicit unsafe: Unsafe => Runtime.unsafe.fromLayer(logger) }
     }
     Unsafe.unsafe { implicit unsafe: Unsafe =>
-      val _ = runtime.unsafe.fork(
+      val _ = runtime.unsafe.run(
         program_3.debug("program")
-          .retry(schedule)
+          .retry(retry)
       )
     }
   }
