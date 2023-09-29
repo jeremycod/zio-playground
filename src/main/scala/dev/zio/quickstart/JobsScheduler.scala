@@ -4,15 +4,19 @@ import zio.{Clock, Runtime, Schedule, Unsafe, ZIO}
 
 import java.time.ZoneId
 import cron4zio._
-import dev.zio.quickstart.ZioSchedulerUnsafeFacade.{consumeScheduledJobs, unsafeZioFork}
+import dev.zio.quickstart.ZioSchedulerUnsafeFacade.unsafeZioFork
 import zio._
 import zio.logging.backend.SLF4J
 
 case class ScheduledJob(jobName: String, action: ZIO[Any, Any, Any], retryPolicy: Schedule[Any, Any, Any])
-trait JobSynchronizer {
-  val jobsQueue: UIO[Queue[ScheduledJob]] = Queue.bounded[ScheduledJob](20)
 
-  protected def handleAction(
+object JobSynchronizer {
+  def make: UIO[JobSynchronizer] = for {
+    q <- Queue.bounded[ScheduledJob](20)
+    jobSync = new JobSynchronizer(q)
+  } yield jobSync
+
+  def handleAction(
       jobName: String,
       action: ZIO[Any, Any, Any],
       retryPolicy: Schedule[Any, Any, Any]
@@ -29,11 +33,13 @@ trait JobSynchronizer {
             }
         }
         .as(ZIO.unit)
-  def consumeScheduledJobs(): ZIO[Any, Nothing, Unit] = {
+
+  def consumeScheduledJobs(jobSynchronizer: JobSynchronizer): ZIO[Any, Nothing, Unit] = {
     println(s"consume scheduled jobs")
     val j = for {
       _ <- ZIO.log(s"started consuming jobs")
-      queue <- jobsQueue
+      //jobsSync <- jobSynchronizer
+      queue = jobSynchronizer.jobsQueue
       size <- queue.size
       _ <- ZIO.log(s"jobs in queue ${size.toString}")
       job <- queue.take
@@ -43,20 +49,26 @@ trait JobSynchronizer {
     j.forever
   }
 }
-object ZioSchedulerUnsafeFacade extends JobSynchronizer {
+
+class JobSynchronizer(val jobsQueue: Queue[ScheduledJob]) {
+  def offer(scheduledJob: ScheduledJob): UIO[Boolean] = jobsQueue.offer(scheduledJob)
+
+}
+
+object ZioSchedulerUnsafeFacade extends App {
 
   private def sendJobToQueue(
       jobName: String,
+      jobSynchronizer: JobSynchronizer,
       action: ZIO[Any, Any, Any],
       retryPolicy: Schedule[Any, Any, Any]
   ) = {
     for {
       _ <- ZIO.log(s"scheduled-job-in-queue, jobName: $jobName")
-      queue <- jobsQueue
-      priorSize <- queue.size
-      _ <- queue.offer(ScheduledJob(jobName, action, retryPolicy))
-      size <- queue.size
-      _ <- ZIO.log(s"scheduled-job-placed-in-queue, jobName: $jobName, ${priorSize.toString}, ${size.toString}")
+      //jobSync <- jobSynchronizer
+      _ <- jobSynchronizer.offer(ScheduledJob(jobName, action, retryPolicy))
+      size <- jobSynchronizer.jobsQueue.size
+      _ <- ZIO.log(s"scheduled-job-placed-in-queue, jobName: $jobName, ${size.toString}")
     } yield ()
   }
 
@@ -67,18 +79,20 @@ object ZioSchedulerUnsafeFacade extends JobSynchronizer {
 
   private def scheduleWithSchedule(
       jobName: String,
+      jobSynchronizer: JobSynchronizer,
       action: ZIO[Any, Any, Any],
       schedule: Schedule[Any, Any, Any],
       timezoneClock: Clock,
       retryPolicy: Schedule[Any, Any, Any]
   ) =
-    sendJobToQueue(jobName, action, retryPolicy)
+    sendJobToQueue(jobName, jobSynchronizer, action, retryPolicy)
       .schedule(schedule)
       .withClock(timezoneClock)
 
   def unsafeRunAsyncScheduledZIO(
       jobName: String,
       runtime: Runtime[Any],
+      jobSynchronizer: JobSynchronizer,
       action: ZIO[Any, Any, Any],
       schedule: Schedule[Any, Any, Any],
       timezoneClock: Clock,
@@ -86,7 +100,7 @@ object ZioSchedulerUnsafeFacade extends JobSynchronizer {
   ): Unit =
     unsafeZioFork(
       runtime,
-      scheduleWithSchedule(jobName, action, schedule, timezoneClock, retryPolicy))
+      scheduleWithSchedule(jobName, jobSynchronizer, action, schedule, timezoneClock, retryPolicy))
 
   private def scheduleWithCron(
       jobName: String,
@@ -95,7 +109,7 @@ object ZioSchedulerUnsafeFacade extends JobSynchronizer {
       zoneId: ZoneId,
       retryPolicy: Schedule[Any, Any, Any]
   ) = repeatEffectForCron(
-    handleAction(jobName, action, retryPolicy),
+    JobSynchronizer.handleAction(jobName, action, retryPolicy),
     unsafeParse(cronString),
     zoneId = zoneId
   ).unit
@@ -112,21 +126,25 @@ object ZioSchedulerUnsafeFacade extends JobSynchronizer {
       runtime,
       scheduleWithCron(jobName, action, cronString, zoneId, retryPolicy)
     )
+  }
 }
+
 object JobsScheduler extends App {
   private val schedulerZone = ZoneId.of("America/Los_Angeles")
   private val schedulerTZClock = Clock.ClockJava(java.time.Clock.system(schedulerZone))
   private val loggingLayer: ZLayer[Any, Any, Unit] = Runtime.removeDefaultLoggers >>> SLF4J.slf4j(
     format = zio.logging.LogFormat.colored
   )
+  private val jobSynchronizer = JobSynchronizer.make
+  val runtime = {
+    Unsafe.unsafe { implicit unsafe: Unsafe => Runtime.unsafe.fromLayer(loggingLayer) }
+  }
+  private def init(jobSynchronizer: JobSynchronizer): Unit = {
 
-  private def init(): Unit = {
-    val runtime = {
-      Unsafe.unsafe { implicit unsafe: Unsafe => Runtime.unsafe.fromLayer(loggingLayer) }
-    }
     ZioSchedulerUnsafeFacade.unsafeRunAsyncScheduledZIO(
       "FirstJobService",
       runtime,
+      jobSynchronizer,
       sampleJobA("First job", delay = 5),
       Schedule.spaced(15.seconds),
       schedulerTZClock
@@ -134,11 +152,12 @@ object JobsScheduler extends App {
     ZioSchedulerUnsafeFacade.unsafeRunAsyncScheduledZIO(
       "SecondJobService",
       runtime,
+      jobSynchronizer,
       sampleJobA("Second job", delay = 20),
       Schedule.spaced(15.seconds),
       schedulerTZClock
     )
-    unsafeZioFork(runtime, consumeScheduledJobs())
+    unsafeZioFork(runtime, JobSynchronizer.consumeScheduledJobs(jobSynchronizer))
 
     Thread.sleep(30000000)
   }
@@ -150,6 +169,10 @@ object JobsScheduler extends App {
       _ <- ZIO.logInfo(s"JOB - finished: ${message}")
     } yield ()
   }
+  def program = for {
+    jobSync <- jobSynchronizer
+    _ = init(jobSync)
+  } yield ()
+  unsafeZioFork(runtime, program)
 
-  init()
 }
