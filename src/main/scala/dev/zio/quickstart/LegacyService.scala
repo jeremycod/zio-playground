@@ -17,7 +17,7 @@ object LegacyService {
       s"Unable to find a reference offer in all the offers with an id of $refOfferId, cannot continue the finalPrice chain"
   }
 
-  trait SdpPublisherFailure extends Throwable {
+  trait SdpPublisherFailure {
     def msg: String
   }
 
