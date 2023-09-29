@@ -4,16 +4,19 @@ import zio.{Clock, Runtime, Schedule, Unsafe, ZIO}
 
 import java.time.ZoneId
 import cron4zio._
+import dev.zio.quickstart.ZioSchedulerUnsafeFacade.{consumeScheduledJobs, unsafeZioFork}
 import zio._
 import zio.logging.backend.SLF4J
 
-trait JobSynchronizer {}
-object ZioSchedulerUnsafeFacade {
-  private def handleAction[R, E, A](
+case class ScheduledJob(jobName: String, action: ZIO[Any, Any, Any], retryPolicy: Schedule[Any, Any, Any])
+trait JobSynchronizer {
+  val jobsQueue: UIO[Queue[ScheduledJob]] = Queue.bounded[ScheduledJob](20)
+
+  protected def handleAction(
       jobName: String,
-      action: ZIO[R, E, A],
+      action: ZIO[Any, Any, Any],
       retryPolicy: Schedule[Any, Any, Any]
-  ) =
+  ): ZIO[Any, Nothing, UIO[Unit]] =
     ZIO.log(s"scheduled-job-start, jobName: $jobName") *>
       action
         .retry(retryPolicy)
@@ -26,27 +29,57 @@ object ZioSchedulerUnsafeFacade {
             }
         }
         .as(ZIO.unit)
+  def consumeScheduledJobs(): ZIO[Any, Nothing, Unit] = {
+    println(s"consume scheduled jobs")
+    val j = for {
+      _ <- ZIO.log(s"started consuming jobs")
+      queue <- jobsQueue
+      size <- queue.size
+      _ <- ZIO.log(s"jobs in queue ${size.toString}")
+      job <- queue.take
+      _ <- ZIO.log(s"scheduled-job-executing, jobName: ${job.jobName}")
+      _ <- handleAction(job.jobName, job.action, job.retryPolicy)
+    } yield ()
+    j.forever
+  }
+}
+object ZioSchedulerUnsafeFacade extends JobSynchronizer {
 
-  private def unsafeZioFork[R, E, A](runtime: Runtime[R], zio: ZIO[R, E, A]): Unit =
+  private def sendJobToQueue(
+      jobName: String,
+      action: ZIO[Any, Any, Any],
+      retryPolicy: Schedule[Any, Any, Any]
+  ) = {
+    for {
+      _ <- ZIO.log(s"scheduled-job-in-queue, jobName: $jobName")
+      queue <- jobsQueue
+      priorSize <- queue.size
+      _ <- queue.offer(ScheduledJob(jobName, action, retryPolicy))
+      size <- queue.size
+      _ <- ZIO.log(s"scheduled-job-placed-in-queue, jobName: $jobName, ${priorSize.toString}, ${size.toString}")
+    } yield ()
+  }
+
+  def unsafeZioFork(runtime: Runtime[Any], zio: ZIO[Any, Any, Any]): Unit =
     Unsafe.unsafe { implicit unsafe: Unsafe =>
       val _ = runtime.unsafe.fork(zio)
     }
 
-  private def scheduleWithSchedule[R, E, A](
+  private def scheduleWithSchedule(
       jobName: String,
-      action: ZIO[R, E, A],
+      action: ZIO[Any, Any, Any],
       schedule: Schedule[Any, Any, Any],
       timezoneClock: Clock,
       retryPolicy: Schedule[Any, Any, Any]
   ) =
-    handleAction(jobName, action, retryPolicy)
+    sendJobToQueue(jobName, action, retryPolicy)
       .schedule(schedule)
       .withClock(timezoneClock)
 
-  def unsafeRunAsyncScheduledZIO[R, E, A](
+  def unsafeRunAsyncScheduledZIO(
       jobName: String,
-      runtime: Runtime[R],
-      action: ZIO[R, E, A],
+      runtime: Runtime[Any],
+      action: ZIO[Any, Any, Any],
       schedule: Schedule[Any, Any, Any],
       timezoneClock: Clock,
       retryPolicy: Schedule[Any, Any, Any] = Schedule.stop // no retry by default
@@ -55,9 +88,9 @@ object ZioSchedulerUnsafeFacade {
       runtime,
       scheduleWithSchedule(jobName, action, schedule, timezoneClock, retryPolicy))
 
-  private def scheduleWithCron[R, E, A](
+  private def scheduleWithCron(
       jobName: String,
-      action: ZIO[R, E, A],
+      action: ZIO[Any, Any, Any],
       cronString: String,
       zoneId: ZoneId,
       retryPolicy: Schedule[Any, Any, Any]
@@ -67,14 +100,14 @@ object ZioSchedulerUnsafeFacade {
     zoneId = zoneId
   ).unit
 
-  private def unsafeRunAsyncCronZIO[R, E, A](
+  private def unsafeRunAsyncCronZIO(
       jobName: String,
-      runtime: Runtime[R],
-      action: ZIO[R, E, A],
+      runtime: Runtime[Any],
+      action: ZIO[Any, Any, Any],
       cronString: String,
       zoneId: ZoneId,
       retryPolicy: Schedule[Any, Any, Any] = Schedule.stop // no retry by default
-  ): Unit =
+  ): Unit = {
     unsafeZioFork(
       runtime,
       scheduleWithCron(jobName, action, cronString, zoneId, retryPolicy)
@@ -105,6 +138,8 @@ object JobsScheduler extends App {
       Schedule.spaced(15.seconds),
       schedulerTZClock
     )
+    unsafeZioFork(runtime, consumeScheduledJobs())
+
     Thread.sleep(30000000)
   }
 
