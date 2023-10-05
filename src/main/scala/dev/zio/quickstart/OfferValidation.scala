@@ -36,16 +36,16 @@ object OfferValidation extends App {
       _ => {})
   }
 
-  val z = ZIO.foreachParDiscard(offers) { offer =>
+  val program = ZIO.foreachParDiscard(offers) { offer =>
     val result = validateOffer2(offer)
-    ZIO.succeed(result.fold(
+    result.fold(
       failures => {
         val f = failures.mkString(", ")
-        println(s"ZIO Offer failed: $f")
+        ZIO.logError(s"ZIO Offer ${offer.id} failed: $f")
       },
-      _ => {}))
+      _ => ZIO.unit)
   }
-  Unsafe.unsafe { implicit u: Unsafe => zio.Runtime.default.unsafe.run(z) }
+  Unsafe.unsafe { implicit u: Unsafe => zio.Runtime.default.unsafe.run(program) }
 
   private def validateOffer(offer: Offer): Validation[String, Offer] =
     Validation.validateWith(validateOfferName(offer), validateOfferPrice(offer))((o, _) => o)
