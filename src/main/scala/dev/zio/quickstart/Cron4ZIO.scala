@@ -23,7 +23,7 @@ object Cron4ZIO {
    Day (of week)	1-7 or SUN-SAT	    - * ? / L #
    Year (optional)	empty, 1970-2099	- * /
  */
-  val cronDefinition: CronDefinition = CronDefinitionBuilder.defineCron()
+  private val cronDefinition: CronDefinition = CronDefinitionBuilder.defineCron()
     .withSeconds().withValidRange(0, 59).and()
     .withMinutes().withValidRange(0, 59).and()
     .withHours().withValidRange(0, 23).and()
@@ -35,7 +35,7 @@ object Cron4ZIO {
     .instance()
   // format: on
 
-  val cronParser: CronParser = new CronParser(cronDefinition)
+  private val cronParser: CronParser = new CronParser(cronDefinition)
 
   /** @param cron
    * @return
@@ -57,7 +57,7 @@ object Cron4ZIO {
    *   Duration between current time and next run based on cron,zoneId provided or throws IllegalArgumentException if for a valid
    *   cron next run cannot be generated
    */
-  def getNextRunDuration(
+  private def getNextRunDuration(
                           cron: Cron,
                           zoneId: ZoneId = ZoneOffset.UTC
                         ): IO[IllegalArgumentException, Duration] =

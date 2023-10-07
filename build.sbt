@@ -9,6 +9,7 @@ val LogbackContribVersion = "0.1.5"
 val ScalaLoggingVersion = "3.9.2"
 val newtypeVersion          = "0.4.4"
 val squantsVersion          = "1.8.3"
+val CirceVersion = "0.14.3"
 //val Cron4ZioVersion = "1.0.0"
 val cronUtilsVersion = "9.2.0"
 
@@ -25,6 +26,7 @@ libraryDependencies ++= Seq(
  //"com.github.tharwaninitin" %% "cron4zio" % Cron4ZioVersion,
   "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
   "io.estatico"           %% "newtype"     % newtypeVersion,
+  "io.circe" %% "circe-core" % CirceVersion,
   "org.typelevel"         %% "squants"     % squantsVersion,
   "org.slf4j" % "slf4j-api" % Slf4jVersion,
   "org.slf4j" % "slf4j-simple" % Slf4jVersion,

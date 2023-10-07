@@ -120,7 +120,7 @@ object ZioSchedulerUnsafeFacade extends App {
     repeatEffectForCron(
       sendJobToQueue(jobName, jobSynchronizer, action, retryPolicy),
       Cron4ZIO.unsafeParse(cronString),
-      //zoneId = schedulerZoneId
+      zoneId = schedulerZoneId
     ).unit
   }
 
@@ -152,16 +152,16 @@ object JobsScheduler extends App {
     Unsafe.unsafe { implicit unsafe: Unsafe => Runtime.unsafe.fromLayer(loggingLayer) }
   }
   private def init(jobSynchronizer: JobSynchronizer): Unit = {
-    val everyTwoMinutes = "*/10 * 22-23 ? * MON,TUE,WED,THU,FRI"
-    val x = "0 14 * ? * MON,TUE,WED,THU,FRI"
-    val y = Cron4ZIO.parse(x)
+    val everyTwoMinutes = "*/2 * 0-23 ? * MON,TUE,WED,THU,FRI"
+    val perSchedule = "0 31|33 15-16 ? * MON,TUE,WED,THU,FRI"
+
     ZioSchedulerUnsafeFacade.unsafeRunAsyncCronZIO(
       "CronJob",
       runtime,
       jobSynchronizer,
       sampleJobA("Cron job", delay = 5).timeoutFail(new TimeoutException)(10.seconds),
-      everyTwoMinutes,
-      newYorkZone
+      perSchedule,
+      schedulerZone
     )
 
    ZioSchedulerUnsafeFacade.unsafeRunAsyncScheduledZIO(
