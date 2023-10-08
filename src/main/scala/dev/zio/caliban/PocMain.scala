@@ -1,13 +1,17 @@
 package dev.zio.caliban
 
 import caliban.CalibanError.ValidationError
-import zio.{IO, Scope, ZIO, ZIOAppArgs, ZIOAppDefault}
+import io.getquill.SnakeCase
+import io.getquill.jdbczio.Quill
+import zio.{IO, Scope, ZEnvironment, ZIO, ZIOAppArgs, ZIOAppDefault}
 
 object PocMain extends ZIOAppDefault {
 
-  val program: IO[ValidationError, Unit] = ??? //for {
- //   offers <- offerService.list("main")
+  val program = for {
+    offers <- OfferService.getOffers
+    _ = offers
 
-//  } yield ()
-  override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] = program
+  } yield (offers)
+  override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
+    program.provide(OfferService.live, Quill.Postgres.fromNamingStrategy(SnakeCase), QuillDataSource.live)
 }

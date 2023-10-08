@@ -3,6 +3,7 @@ package dev.zio.caliban.model
 import dev.zio.caliban.model.Offer.{Cohort, TargetOfferId}
 
 import java.time.OffsetDateTime
+import scala.collection.immutable
 
 object Offer {
   // offer attributes keys
@@ -99,13 +100,13 @@ final case class Offer(
     description: Option[String],
     discountId: Option[String],
    // products: Map[String, OfferProduct], // Product ID -> OfferProduct
-    attributes: Map[String, Set[String]],
+   // attributes: Map[String, Set[String]],
     //messages: Map[String, String],
-    //metadata: Map[String, String],
+   // metadata: Map[String, String],
     //transitions: Map[TargetOfferId, OfferTransition], // Target Offer Id -> OfferTransition
-    legacy: Map[String, String],
+    legacy: immutable.Map[String, String],
     author: String,
-    datetime: OffsetDateTime,
+  //  datetime: OffsetDateTime,
     profile: String,
     version: Option[Long] = None,
     // not saved to the db, is used for populating campaign offer cohorts on campaign creation
