@@ -10,10 +10,15 @@ val ScalaLoggingVersion = "3.9.2"
 val newtypeVersion          = "0.4.4"
 val squantsVersion          = "1.8.3"
 val CirceVersion = "0.14.3"
+val quillVersion = "4.8.0"
 //val Cron4ZioVersion = "1.0.0"
 val cronUtilsVersion = "9.2.0"
+val circeVersion = "0.14.5"
 
 libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core" % circeVersion,
+  "io.circe" %% "circe-generic" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
   "dev.zio" %% "zio" % ZioVersion,
   "dev.zio" %% "zio-logging-slf4j2" % ZioLoggingVersion,
   "dev.zio" %% "zio-streams" % ZioVersion,
@@ -23,6 +28,9 @@ libraryDependencies ++= Seq(
   "dev.zio" %% "zio-json" % "0.3.0-RC8",
   "dev.zio" %% "zio-interop-reactivestreams" % "1.3.5",
   "com.cronutils" % "cron-utils" % cronUtilsVersion,
+  "com.github.ghostdogpr"         %% "caliban"                       % "2.0.1",
+  "io.getquill" %% "quill-zio" % quillVersion,
+  "io.getquill" %% "quill-jdbc-zio" % quillVersion,
  //"com.github.tharwaninitin" %% "cron4zio" % Cron4ZioVersion,
   "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
   "io.estatico"           %% "newtype"     % newtypeVersion,

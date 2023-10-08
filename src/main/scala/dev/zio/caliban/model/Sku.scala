@@ -19,7 +19,7 @@ final case class Sku(
     legacy: Map[String, String]
 ) {
 
-  def legacyOrigin: Option[String] = legacy.get(legacyOriginKey)
+  def legacyOrigin: Option[String] = legacy.get("legacyOriginKey")
 }
 
 object Sku {
