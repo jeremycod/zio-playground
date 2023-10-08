@@ -1,5 +1,7 @@
 package dev.zio.caliban.model
 
+import dev.zio.caliban.model.Offer.{Cohort, TargetOfferId}
+
 import java.time.OffsetDateTime
 
 object Offer {
@@ -96,21 +98,25 @@ final case class Offer(
     name: String,
     description: Option[String],
     discountId: Option[String],
-    products: Map[String, OfferProduct], // Product ID -> OfferProduct
+   // products: Map[String, OfferProduct], // Product ID -> OfferProduct
     attributes: Map[String, Set[String]],
-    messages: Map[String, String],
-    metadata: Map[String, String],
-    transitions: Map[TargetOfferId, OfferTransition], // Target Offer Id -> OfferTransition
+    //messages: Map[String, String],
+    //metadata: Map[String, String],
+    //transitions: Map[TargetOfferId, OfferTransition], // Target Offer Id -> OfferTransition
     legacy: Map[String, String],
     author: String,
     datetime: OffsetDateTime,
     profile: String,
     version: Option[Long] = None,
     // not saved to the db, is used for populating campaign offer cohorts on campaign creation
-    eligibility: Option[OfferEligibility]
-) extends AccessHelper {
-  import Offer._
+   // eligibility: Option[OfferEligibility]
+)
 
+  /*extends AccessHelper {
+  import Offer._
+  val products: Map[String, OfferProduct] = Map.empty
+  val legacy: Map[String, String] = Map.empty
+  val attributes: Map[String, Set[String]] = Map.empty
   def countriesFromSkus: Set[String] = products.values.map(_.skus.map {
     case (_, attrs) => attrs.getOrElse("countries", Set.empty[String])
   }.foldLeft(Set.empty[String])((acc, b) =>
@@ -133,4 +139,4 @@ final case class Offer(
   def threePPPaidAmount: Option[String] = one(PartnerPaidAmountKey)
   def threePPPaidUpon: Option[String] = one(PartnerPaidUponKey)
   def countries: Set[String] = many(CountriesKey)
-}
+}*/

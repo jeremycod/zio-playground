@@ -1,5 +1,6 @@
 package dev.zio.caliban.model
 
+import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 import java.time.OffsetDateTime
