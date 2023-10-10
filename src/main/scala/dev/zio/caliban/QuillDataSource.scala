@@ -15,9 +15,9 @@ object QuillDataSource {
       pgDataSource <- attempt {
         val dataSource = new org.postgresql.ds.PGSimpleDataSource()
         dataSource.setURL(databaseURL)
-        dataSource.setDatabaseName("genieplus")
-        dataSource.setUser("alice4")
-        dataSource.setPassword("securePass1")
+        dataSource.setDatabaseName("genie")
+        dataSource.setUser("postgres")
+        dataSource.setPassword("genieplus")
         dataSource
       }
       hikariConfig <- attempt {
