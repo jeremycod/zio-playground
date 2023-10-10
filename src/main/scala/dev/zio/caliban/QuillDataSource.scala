@@ -30,6 +30,6 @@ object QuillDataSource {
 
   yield (dataSource)
 
-  val live: ZLayer[Any, Throwable, HikariDataSource] =
+  val layer: ZLayer[Any, Throwable, HikariDataSource] =
     ZLayer.fromZIO(mkDataSource)
 }

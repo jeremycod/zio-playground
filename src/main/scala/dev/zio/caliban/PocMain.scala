@@ -8,10 +8,11 @@ import zio.{IO, Scope, ZEnvironment, ZIO, ZIOAppArgs, ZIOAppDefault}
 object PocMain extends ZIOAppDefault {
 
   val program = for {
-    offers <- OfferService.getOffers
-    _ = offers
+    //offerApi <- ZIO.
+      allOffers <- OfferServiceDataStore.getOffers
+    _ = allOffers
 
-  } yield (offers)
+  } yield (allOffers)
   override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
-    program.provide(OfferService.live, Quill.Postgres.fromNamingStrategy(SnakeCase), QuillDataSource.live)
+    program.provide(OfferServiceDataStore.layer, Quill.Postgres.fromNamingStrategy(SnakeCase), QuillDataSource.layer)
 }

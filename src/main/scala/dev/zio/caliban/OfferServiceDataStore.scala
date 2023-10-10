@@ -1,7 +1,6 @@
 package dev.zio.caliban
 
 import dev.zio.caliban.model._
-
 import io.getquill.{Query, SnakeCase}
 import io.getquill.jdbczio.Quill
 import zio._
@@ -9,6 +8,8 @@ import zio.json.{DeriveJsonDecoder, DeriveJsonEncoder}
 
 import java.sql.SQLException
 import Implicits._
+import caliban.{GraphQL, RootResolver}
+import caliban.GraphQL.graphQL
 
 object Implicits {
   implicit val mEcnoder = QuillJson.jsonEncoder[Map[String, String]]
@@ -18,7 +19,7 @@ object Implicits {
 }
 
 
-class OfferService(val quill: Quill.Postgres[SnakeCase]) {
+class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) {
   import quill._
 
   protected def profileVersionSelector(entityName: String, profile: String) =
@@ -43,15 +44,15 @@ class OfferService(val quill: Quill.Postgres[SnakeCase]) {
  // val profileVersionSql = quote { querySchema[Offer](entity = "offers")}
  /* val queryOffersSql: Quoted[Query[(String, String, Long)]] =
     quote { querySchema[Offer](entity = "offers").map(p => profileVersionSelector("offer", "main"))}
-*/  def list: ZIO[Any, SQLException, Seq[Offer]] = {
-
+*/  def fetchOffers: ZIO[Any, SQLException, Seq[Offer]] = {
    val version = profileVersionSelector("offer", "main")
    run(getMainEntities("offer", version))
  }
-}
-object OfferService {
-  def getOffers: ZIO[OfferService, SQLException, Seq[Offer]] =
-    ZIO.serviceWithZIO[OfferService](_.list)
 
-  val live = ZLayer.fromFunction(new OfferService(_))
+}
+object OfferServiceDataStore {
+  def getOffers: ZIO[OfferServiceDataStore, SQLException, Seq[Offer]] =
+    ZIO.serviceWithZIO[OfferServiceDataStore](_.fetchOffers)
+
+  val layer = ZLayer.fromFunction(new OfferServiceDataStore(_))
 }
