@@ -6,7 +6,6 @@ import zio._
 import java.io.IOException
 object JobSchedulerSpec extends ZIOSpecDefault {
 
-
   def succeedAndAppendJobLog(ref: Ref[Array[String]], jobName: String, delaySeconds: Int): IO[String, String] =
     for {
       _ <- ref.update(_ :+ jobName)
@@ -17,7 +16,7 @@ object JobSchedulerSpec extends ZIOSpecDefault {
     } yield r
 
   def spec: Spec[Any, String] = suite("Job Scheduler")(
-    test("Validate with promise"){
+    test("Validate with promise") {
       for {
         ref <- Ref.make(Array.empty[String])
         _ <- succeedAndAppendJobLog(ref, "test-1", 2)
@@ -25,6 +24,5 @@ object JobSchedulerSpec extends ZIOSpecDefault {
         readRef <- ref.get
       } yield assertTrue(readRef sameElements Array("test-1", "test-2"))
     }
-
   )
-
+}
