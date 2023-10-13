@@ -3,14 +3,22 @@ package dev.zio.caliban
 object Queries {
   val offers: String =
     """{
-      |offers {
+      |offers(profile : "main") {
       | id
-      | name
-      | description
-      | discountId
-      | author
-      | profile
-      | version
+      | offer {
+      |   id
+      |   name
+      |   description
+      |   discountId
+      |   author
+      |   profile
+      |   version
+      | }
+      | products {
+      |   offerProduct{
+      |     referenceOffer
+      |   }
+      | }
       |}
       |}
       |""".stripMargin

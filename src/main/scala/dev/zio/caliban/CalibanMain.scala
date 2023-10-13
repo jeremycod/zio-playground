@@ -18,6 +18,7 @@ object CalibanMain extends ZIOAppDefault {
     program.provide(
       OfferApi.layer,
       OfferServiceDataStore.layer,
+      ProductServiceDataStore.layer,
       Quill.Postgres.fromNamingStrategy(SnakeCase),
       QuillDataSource.layer)
 }

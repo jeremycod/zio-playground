@@ -3,30 +3,45 @@ package dev.zio.caliban
 import caliban.RootResolver
 import caliban.GraphQL.graphQL
 import caliban.schema.Annotations.GQLDescription
-import dev.zio.caliban.model.Offer
+import dev.zio.caliban.model.{Offer, OfferProduct}
 import zio.{ZIO, ZLayer}
-import zio.query.Query
+import zio.query.{Query, ZQuery}
 
-class OfferApi(dataStore: OfferServiceDataStore) {
+import java.sql.SQLException
 
+class OfferApi(dataStore: OfferServiceDataStore, productDataStore: ProductServiceDataStore) {
+
+  type MyQuery[+A] = ZQuery[Any, SQLException, A]
+
+  case class OffersQueryArgs(profile: String)
+  case class Query(offers: OffersQueryArgs => MyQuery[Seq[OfferView]])
+
+  case class OfferView(id: String, offer: Offer, products: MyQuery[Seq[OfferProductView]])
+  case class OfferProductView(offerProduct: OfferProduct)
   case class FindAllOffersArgs(profile: String)
 
-  case class Queries(
+  /*  case class Query(
       @GQLDescription("Return all top entities")
-      offers: ZIO[Any, Throwable, Seq[Offer]]
-  )
-  val queries = Queries(fetchAllOffers)
+      offers: OffersQueryArgs => MyQuery[Seq[OfferView]]
+  )*/
+  val resolver: Query = Query(args => fetchAllOffers(args.profile))
 
-  private def fetchAllOffers =
-    dataStore.fetchOffers
-    //  .map(entities => entities.map(fetchOfferProducts))
+  def getProducts(offerId: String): MyQuery[Seq[OfferProductView]] =
+    ZQuery.fromZIO(productDataStore.fetchProducts(offerId))
+      .map(_.map(offerProduct => OfferProductView( offerProduct)))
 
-  private def fetchOfferProducts = ???
+  private def fetchAllOffers(profile: String): MyQuery[Seq[OfferView]] =
+    ZQuery.fromZIO(dataStore.fetchOffers)
+      .map(_.map(offer => OfferView(offer.id, offer, getProducts(offer.id))))
+  //.map(offer => entities.map(fetchOfferProducts))
 
-  val interpreter = graphQL(RootResolver(queries)).interpreter
+
+  val interpreter = graphQL(RootResolver(resolver)).interpreter
 
 }
 object OfferApi {
-  private def create(dataStore: OfferServiceDataStore) = new OfferApi(dataStore)
-  val layer: ZLayer[OfferServiceDataStore, Nothing, OfferApi] = ZLayer.fromFunction(create _)
+  private def create(dataStore: OfferServiceDataStore, productDataStore: ProductServiceDataStore) =
+    new OfferApi(dataStore, productDataStore)
+  val layer: ZLayer[OfferServiceDataStore with ProductServiceDataStore, Nothing, OfferApi] =
+    ZLayer.fromFunction(create _)
 }

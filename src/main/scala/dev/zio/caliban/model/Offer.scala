@@ -99,7 +99,7 @@ final case class Offer(
     name: String,
     description: Option[String],
     discountId: Option[String],
-   // products: Map[String, OfferProduct], // Product ID -> OfferProduct
+    //products: Map[String, OfferProduct], // Product ID -> OfferProduct
    // attributes: Map[String, Set[String]],
     //messages: Map[String, String],
    // metadata: Map[String, String],

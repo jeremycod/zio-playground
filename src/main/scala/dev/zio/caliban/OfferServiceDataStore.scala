@@ -33,7 +33,6 @@ class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) {
 
 
   private def getMainEntities(entityName: String, versionSelector: String) = {
-    val tableName = "offers"
     quote {
       sql"""SELECT e.* FROM #${entityName}s as e
            JOIN (#$versionSelector) as vs ON e.id = vs.id and e.profile = vs.profile and e.version = vs.version"""
