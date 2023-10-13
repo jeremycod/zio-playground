@@ -1,9 +1,10 @@
 package dev.zio.caliban
 
-import caliban.CalibanError.ValidationError
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
-import zio.{IO, Scope, ZEnvironment, ZIO, ZIOAppArgs, ZIOAppDefault}
+import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault}
+import caliban.schema.ArgBuilder.auto._
+import caliban.schema.Schema.auto._
 
 object CalibanMain extends ZIOAppDefault {
 

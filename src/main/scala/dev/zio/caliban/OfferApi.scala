@@ -1,24 +1,33 @@
 package dev.zio.caliban
 
 import caliban.RootResolver
-import caliban.GraphQL.graphQL
-import caliban.schema.Annotations.GQLDescription
-import dev.zio.caliban.model.{Offer, OfferProduct}
+import caliban.graphQL
+import caliban.schema.ArgBuilder.auto._
+import caliban.schema.Schema.auto._
+import dev.zio.caliban.model.{Offer, _}
 import zio.{ZIO, ZLayer}
-import zio.query.{Query, ZQuery}
+import zio.query.ZQuery
+import Model._
 
 import java.sql.SQLException
 
-class OfferApi(dataStore: OfferServiceDataStore, productDataStore: ProductServiceDataStore) {
-
+object Model {
   type MyQuery[+A] = ZQuery[Any, SQLException, A]
 
   case class OffersQueryArgs(profile: String)
+
   case class Query(offers: OffersQueryArgs => MyQuery[Seq[OfferView]])
 
-  case class OfferView(id: String, offer: Offer, products: MyQuery[Seq[OfferProductView]])
+  case class OfferView(id: String, products: MyQuery[Seq[OfferProductView]])
+
   case class OfferProductView(offerProduct: OfferProduct)
+
   case class FindAllOffersArgs(profile: String)
+}
+
+class OfferApi(dataStore: OfferServiceDataStore, productDataStore: ProductServiceDataStore) {
+
+
 
   /*  case class Query(
       @GQLDescription("Return all top entities")
@@ -32,7 +41,7 @@ class OfferApi(dataStore: OfferServiceDataStore, productDataStore: ProductServic
 
   private def fetchAllOffers(profile: String): MyQuery[Seq[OfferView]] =
     ZQuery.fromZIO(dataStore.fetchOffers)
-      .map(_.map(offer => OfferView(offer.id, offer, getProducts(offer.id))))
+      .map(_.map(offerView => OfferView(offerView.id, getProducts(offerView.id))))
   //.map(offer => entities.map(fetchOfferProducts))
 
 
