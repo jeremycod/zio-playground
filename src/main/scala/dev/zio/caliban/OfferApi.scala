@@ -1,13 +1,15 @@
-package dev.zio.caliban
+/*package dev.zio.caliban
 
 import caliban.RootResolver
 import caliban.graphQL
 import caliban.schema.ArgBuilder.auto._
 import caliban.schema.Schema.auto._
-import dev.zio.caliban.model.{Offer, _}
+import dev.zio.caliban.table
 import zio.{ZIO, ZLayer}
 import zio.query.ZQuery
 import Model._
+import dev.zio.caliban.persist.{DataStoreService, OfferServiceDataStore, ProductServiceDataStore}
+import dev.zio.caliban.subgraph.{OfferProductView, OfferView}
 
 import java.sql.SQLException
 
@@ -16,36 +18,29 @@ object Model {
 
   case class OffersQueryArgs(profile: String)
 
-  case class Query(offers: OffersQueryArgs => MyQuery[Seq[OfferView]])
-
-  case class OfferView(id: String, products: MyQuery[Seq[OfferProductView]])
-
-  case class OfferProductView(offerProduct: OfferProduct)
+  case class Query(offers: OffersQueryArgs => MyQuery[ Seq[OfferView]])
 
   case class FindAllOffersArgs(profile: String)
 }
 
 class OfferApi(dataStore: OfferServiceDataStore, productDataStore: ProductServiceDataStore) {
 
-
-
   /*  case class Query(
       @GQLDescription("Return all top entities")
       offers: OffersQueryArgs => MyQuery[Seq[OfferView]]
   )*/
-  val resolver: Query = Query(args => fetchAllOffers(args.profile))
+  val query: Query = Query(args => fetchAllOffers(args.profile))
 
   def getProducts(offerId: String): MyQuery[Seq[OfferProductView]] =
     ZQuery.fromZIO(productDataStore.fetchProducts(offerId))
-      .map(_.map(offerProduct => OfferProductView( offerProduct)))
+      .map(_.map(offerProduct => OfferProductView.fromTable(offerProduct)))
 
-  private def fetchAllOffers(profile: String): MyQuery[Seq[OfferView]] =
+  def fetchAllOffers(profile: String): MyQuery[Seq[OfferView]] =
     ZQuery.fromZIO(dataStore.fetchOffers)
-      .map(_.map(offerView => OfferView(offerView.id, getProducts(offerView.id))))
+      .map(_.map(offer => OfferView.fromTable(offer)))
   //.map(offer => entities.map(fetchOfferProducts))
 
-
-  val interpreter = graphQL(RootResolver(resolver)).interpreter
+  val interpreter = graphQL(RootResolver(query)).interpreter
 
 }
 object OfferApi {
@@ -53,4 +48,4 @@ object OfferApi {
     new OfferApi(dataStore, productDataStore)
   val layer: ZLayer[OfferServiceDataStore with ProductServiceDataStore, Nothing, OfferApi] =
     ZLayer.fromFunction(create _)
-}
+}*/

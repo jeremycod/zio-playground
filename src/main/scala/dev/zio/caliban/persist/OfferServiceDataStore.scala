@@ -1,15 +1,13 @@
-package dev.zio.caliban
+package dev.zio.caliban.persist
 
-import dev.zio.caliban.model._
-import io.getquill.{Query, SnakeCase}
+import dev.zio.caliban.QuillJson
+import dev.zio.caliban.table._
 import io.getquill.jdbczio.Quill
+import io.getquill.{Query, SnakeCase}
 import zio._
 import zio.json.{DeriveJsonDecoder, DeriveJsonEncoder}
 
 import java.sql.SQLException
-import Implicits._
-
-import dev.zio.caliban.Model._
 
 object Implicits {
   // implicit val mapSetEncoder: zio.json.JsonEncoder[Map[String, Set[String]]] = zio.json.JsonEncoder.map[String, Set[String]]
@@ -47,7 +45,7 @@ object Implicits {
 }
 
 
-class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) {
+class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService {
   import quill._
 
   protected def profileVersionSelector(entityName: String, profile: String) =
@@ -71,14 +69,14 @@ class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) {
  // val profileVersionSql = quote { querySchema[Offer](entity = "offers")}
  /* val queryOffersSql: Quoted[Query[(String, String, Long)]] =
     quote { querySchema[Offer](entity = "offers").map(p => profileVersionSelector("offer", "main"))}
-*/  def fetchOffers: ZIO[Any, SQLException, Seq[Offer]] = {
+*/  def fetchOffers: ZIO[Any, Throwable, Seq[Offer]] = {
    val version = profileVersionSelector("offer", "main")
    run(getOffers("offer", version))
  }
 
 }
 object OfferServiceDataStore {
-  def getOffers: ZIO[OfferServiceDataStore, SQLException, Seq[Offer]] =
+  def getOffers: ZIO[OfferServiceDataStore, Throwable, Seq[Offer]] =
     ZIO.serviceWithZIO[OfferServiceDataStore](_.fetchOffers)
 
   val layer = ZLayer.fromFunction(new OfferServiceDataStore(_))

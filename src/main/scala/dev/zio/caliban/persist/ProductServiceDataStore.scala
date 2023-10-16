@@ -1,13 +1,13 @@
-package dev.zio.caliban
+package dev.zio.caliban.persist
 
-import dev.zio.caliban.model.{Offer, OfferProduct}
-import io.getquill.{Query, SnakeCase}
+import dev.zio.caliban.table.OfferProduct
 import io.getquill.jdbczio.Quill
+import io.getquill.{Query, SnakeCase}
 import zio.{ZIO, ZLayer}
 
 import java.sql.SQLException
 
-class ProductServiceDataStore(val quill: Quill.Postgres[SnakeCase]) {
+class ProductServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService {
   import quill._
 
   protected def profileVersionSelector(entityName: String, profile: String) =
