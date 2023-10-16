@@ -4,19 +4,19 @@ package dev.zio.caliban
 import caliban.CalibanError.{ExecutionError, ParsingError, ValidationError}
 import caliban.ResponseValue.ObjectValue
 import caliban.Value.StringValue
-import caliban.schema.GenericSchema
+import caliban.schema._
 import caliban.{CalibanError, GraphQLInterpreter, RootResolver, graphQL}
+import dev.zio.caliban.Queries.Env
 import dev.zio.caliban.persist.{OfferServiceDataStore, ProductServiceDataStore}
+//import dev.zio.caliban.resolver.GetOffer.Env
 
 //import caliban.schema.ArgBuilder.auto._
 //import caliban.schema.Schema.auto._
 
-object DMGraphQL extends GenericSchema[OfferServiceDataStore with ProductServiceDataStore]{
+object customSchema extends GenericSchema[Env]
 
-  type Env = OfferServiceDataStore with ProductServiceDataStore
-
-  import caliban.schema.ArgBuilder.auto._
-  import caliban.schema.Schema.auto._
+import customSchema.auto._
+object DMGraphQL {
 
   val api = graphQL(
     RootResolver(Queries.live)
