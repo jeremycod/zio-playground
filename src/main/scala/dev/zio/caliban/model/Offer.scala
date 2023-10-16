@@ -99,18 +99,18 @@ final case class Offer(
     name: String,
     description: Option[String],
     discountId: Option[String],
-    //products: Map[String, OfferProduct], // Product ID -> OfferProduct
-   // attributes: Map[String, Set[String]],
-    //messages: Map[String, String],
-   // metadata: Map[String, String],
-    //transitions: Map[TargetOfferId, OfferTransition], // Target Offer Id -> OfferTransition
+    products: Map[String, OfferProduct], // Product ID -> OfferProduct
+    attributes: Map[String, Set[String]],
+    messages: Map[String, String],
+    metadata: Map[String, String],
+    transitions: Map[TargetOfferId, OfferTransition], // Target Offer Id -> OfferTransition
     legacy: immutable.Map[String, String],
     author: String,
-  //  datetime: OffsetDateTime,
+    datetime: OffsetDateTime,
     profile: String,
     version: Option[Long] = None,
     // not saved to the db, is used for populating campaign offer cohorts on campaign creation
-   // eligibility: Option[OfferEligibility]
+    eligibility: Option[OfferEligibility]
 )
 
   /*extends AccessHelper {

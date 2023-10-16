@@ -23,19 +23,16 @@ object Queries {
     """{
       |offers(profile : "main") {
       | id
-      | offer {
-      |   id
-      |   name
-      |   description
-      |   discountId
-      |   author
-      |   profile
-      |   version
-      | }
+      | name
+      | description
+      | discountId
       | products {
-      |   offerProduct{
-      |     referenceOffer
-      |   }
+      | priceId
+      | referenceOffer
+      | phaseId
+      | legacy
+      | skus
+      | version
       | }
       |}
       |}

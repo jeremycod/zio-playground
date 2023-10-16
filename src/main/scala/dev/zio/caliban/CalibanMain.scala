@@ -3,10 +3,10 @@ package dev.zio.caliban
 import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault}
-import caliban.schema.ArgBuilder.auto._
-import caliban.schema.Schema.auto._
+//import caliban.schema.ArgBuilder.auto._
+//import caliban.schema.Schema.auto._
 import dev.zio.caliban.persist.{OfferServiceDataStore, ProductServiceDataStore}
-import dev.zio.caliban.resolver.GetOffer
+//import dev.zio.caliban.resolver.GetOffer
 
 object CalibanMain extends ZIOAppDefault {
 
