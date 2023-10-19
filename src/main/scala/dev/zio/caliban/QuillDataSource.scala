@@ -4,9 +4,29 @@ import zio.ZIO
 import zio.{ZIO, _}
 import ZIO.{attempt, fromOption, logInfo}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.typesafe.config.{ Config, ConfigFactory }
 
 object QuillDataSource {
-  val databaseURLOpt = Some("jdbc:postgresql://localhost:5432/")
+  private def mkDataSource(config: DatabaseConfig): Task[HikariDataSource] = {
+    for {
+      pgDataSource <- ZIO.attempt {
+        val dataSource = new org.postgresql.ds.PGSimpleDataSource()
+        dataSource.setURL(config.url)
+        dataSource.setUser(config.username)
+        dataSource.setPassword(config.password)
+        dataSource
+      }
+      hikariConfig <- ZIO.attempt {
+        val config = new HikariConfig()
+        config.setDataSource(pgDataSource)
+        config
+      }
+      dataSource <- ZIO.attempt(new HikariDataSource(hikariConfig))
+    } yield dataSource
+  }
+
+  val layer = ZLayer.fromZIO(ZIO.serviceWithZIO[AppConfig](config => mkDataSource(config.databaseConfig)))
+/*  val databaseURLOpt = Some("jdbc:postgresql://localhost:5432/")
   private def mkDataSource: Task[HikariDataSource] =
     for {
      // databaseURLOpt <- System.env("DATABASE_URL").orDie
@@ -14,13 +34,13 @@ object QuillDataSource {
         .orElseFail(new RuntimeException("Missing the \"DATABASE_URL\" environment variable."))
       pgDataSource <- attempt {
         val dataSource = new org.postgresql.ds.PGSimpleDataSource()
-       // dataSource.setURL(databaseURL)
-        dataSource.setDatabaseName("genie")
-        //dataSource.setDatabaseName("genieplus")
-        dataSource.setUser("postgres")
-        //dataSource.setUser("alice4")
-        dataSource.setPassword("genieplus")
-        //dataSource.setPassword("securePass1")
+        dataSource.setURL(databaseURL)
+        //dataSource.setDatabaseName("genie")
+        dataSource.setDatabaseName("genieplus")
+        //dataSource.setUser("postgres")
+        dataSource.setUser("alice4")
+        //dataSource.setPassword("genieplus")
+        dataSource.setPassword("securePass1")
         dataSource
       }
       hikariConfig <- attempt {
@@ -31,8 +51,8 @@ object QuillDataSource {
       dataSource <- attempt(new HikariDataSource(hikariConfig))
     }
 
-  yield (dataSource)
+  yield (dataSource)*/
 
-  val layer: ZLayer[Any, Throwable, HikariDataSource] =
-    ZLayer.fromZIO(mkDataSource)
+/*  val layer: ZLayer[Any, Throwable, HikariDataSource] =
+    ZLayer.fromZIO(mkDataSource)*/
 }

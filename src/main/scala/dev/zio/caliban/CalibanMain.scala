@@ -11,7 +11,6 @@ import dev.zio.caliban.persist.{OfferServiceDataStore, ProductServiceDataStore}
 object CalibanMain extends ZIOAppDefault {
 
   val program = for {
-    //offerApi <- ZIO.service[OfferApi]
     interpreter <- DMGraphQL.interpreter
     result <- interpreter.execute(Queries.offers)
     _ <- zio.ZIO.debug(result.data.toString)
@@ -19,7 +18,7 @@ object CalibanMain extends ZIOAppDefault {
   } yield (result)
   override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
     program.provide(
-      //OfferApi.layer,
+      AppConfig.layer,
       OfferServiceDataStore.layer,
       ProductServiceDataStore.layer,
       Quill.Postgres.fromNamingStrategy(SnakeCase),

@@ -32,6 +32,7 @@ libraryDependencies ++= Seq(
   "io.getquill" %% "quill-zio" % quillVersion,
   "io.getquill" %% "quill-jdbc-zio" % quillVersion,
   "org.postgresql" % "postgresql" % "42.5.0",
+  "com.github.pureconfig" %% "pureconfig"   % "0.17.3",
   //"com.github.tharwaninitin" %% "cron4zio" % Cron4ZioVersion,
   "dev.zio" %% "zio-prelude" % "1.0.0-RC21",
   "io.estatico" %% "newtype" % newtypeVersion,

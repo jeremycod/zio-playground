@@ -34,7 +34,7 @@ object OfferView {
       name = offerView.name,
       description = offerView.description,
       discountId = offerView.discountId,
-      products = offerView.products.map(_.),
+      products = Map.empty,
       attributes = Map.empty,
       messages = Map.empty[String, String],
       metadata = Map.empty[String, String],

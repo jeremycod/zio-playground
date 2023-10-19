@@ -19,7 +19,7 @@ object DMGraphQL {
   )
   val interpreter = api.interpreter//.map(errorHandler)
 
-  private def errorHandler[R](
+/*  private def errorHandler[R](
       interpreter: GraphQLInterpreter[R, CalibanError]
   ): GraphQLInterpreter[R, CalibanError] = interpreter.mapError {
     case err: ExecutionError =>
@@ -30,5 +30,5 @@ object DMGraphQL {
       err.copy(extensions = Some(ObjectValue(List("errorCode" -> StringValue("PARSING_ERROR")))))
     case err: CalibanError =>
       err
-  }
+  }*/
 }
