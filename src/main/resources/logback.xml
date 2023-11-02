@@ -6,11 +6,11 @@
         </encoder>
     </appender>
 
-            <root level="DEBUG">
+            <root level="INFO">
                 <appender-ref ref="CONSOLE"/>
             </root>
 
     <!-- Change to DEBUG level to enable generated SQL statement logging -->
-    <logger name="scala.slick" level="DEBUG" />
-    <logger name="slick.jdbc" level="DEBUG" />
+    <logger name="scala.slick" level="WARN" />
+    <logger name="slick.jdbc" level="WARN" />
 </configuration>

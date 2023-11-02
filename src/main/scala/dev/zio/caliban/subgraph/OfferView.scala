@@ -1,9 +1,10 @@
 package dev.zio.caliban.subgraph
 
 
+import dev.zio.caliban.Queries.Env
 import dev.zio.caliban.model
-import dev.zio.caliban.persist.ProductServiceDataStore
-import dev.zio.caliban.resolver.GetOfferProduct
+import dev.zio.caliban.persist.{OfferServiceDataStore, ProductServiceDataStore}
+import dev.zio.caliban.resolver.{GetOffer, GetOfferProduct}
 import dev.zio.caliban.table
 import zio.query.ZQuery
 
@@ -14,7 +15,8 @@ case class OfferView(
     name: String,
     description: Option[String],
     discountId: Option[String],
-    products: ZQuery[ProductServiceDataStore, Throwable, Seq[OfferProductView]]
+    attributes: ZQuery[OfferServiceDataStore, Throwable, Map[String, String]],
+    products: ZQuery[Env, Throwable, Seq[OfferProductView]]
 )
 object OfferView {
   def fromTable(o: table.Offer): OfferView = {
@@ -23,29 +25,11 @@ object OfferView {
       o.name,
       o.description,
       o.discountId,
+      GetOffer.getAttributes(o.id),
       GetOfferProduct.getProducts(o.id)
 
     )
   }
 
-  def toDomainOffer(offerView: OfferView): model.Offer = {
-    model.Offer(
-      id = offerView.id,
-      name = offerView.name,
-      description = offerView.description,
-      discountId = offerView.discountId,
-      products = Map.empty,
-      attributes = Map.empty,
-      messages = Map.empty[String, String],
-      metadata = Map.empty[String, String],
-      transitions = Map.empty,
-      legacy = Map.empty,
-      author = "",
-      datetime = OffsetDateTime.now(),
-      profile = "test",
-      version = None,
-      eligibility = None
-    )
-  }
 
 }

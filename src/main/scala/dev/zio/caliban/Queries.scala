@@ -1,18 +1,14 @@
 package dev.zio.caliban
 
-/*import caliban.schema.ArgBuilder.auto._
-import caliban.schema.Schema.auto._*/
 import dev.zio.caliban.Queries.Env
 import dev.zio.caliban.persist.{OfferServiceDataStore, ProductServiceDataStore}
 import dev.zio.caliban.resolver.GetOffer
-import dev.zio.caliban.subgraph.OfferView
 import dev.zio.caliban.transformer.OfferFinal
 import zio.query.ZQuery
 
 
 case class OffersQueryArgs(profile: String)
 
-//case class Query(offers: OffersQueryArgs => ZQuery[GetOffer.Env, Throwable, Seq[OfferView]])
 
 case class FindAllOffersArgs(profile: String)
 final case class Queries(
@@ -27,13 +23,17 @@ object Queries {
       | name
       | description
       | discountId
+      | attributes {key, value}
       | products {
-      | priceId
-      | referenceOffer
-      | phaseId
-      | legacy
-      | skus
-      | version
+      |   priceId
+      |   referenceOffer
+      |   refOffer {
+      |     id
+      |   }
+      |   phaseId
+      |   legacy
+      |   skus
+      |   version
       | }
       |}
       |}

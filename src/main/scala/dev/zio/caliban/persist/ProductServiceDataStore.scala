@@ -10,16 +10,9 @@ import java.sql.SQLException
 class ProductServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService {
   import quill._
 
-  protected def profileVersionSelector(entityName: String, profile: String) =
-    s"""
-       SELECT id, profile, version
-       FROM (
-         SELECT id, profile, deleted, version, row_number() OVER (PARTITION BY id, profile ORDER BY version DESC) as rn
-         FROM ${entityName}s
-       ) as t WHERE rn = 1 and deleted = false and profile = '$profile'"""
 
   def fetchProducts(offerId: String): ZIO[Any, SQLException, Seq[OfferProduct]] = {
-    val version = profileVersionSelector("offer", "main")
+    val version = versionSelector("offer", "where profile = 'main' and author='transform'")
     run(getOfferProducts("offer_product", version, offerId))
   }
 
