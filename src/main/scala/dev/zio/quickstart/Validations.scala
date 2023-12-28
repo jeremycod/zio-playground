@@ -1,4 +1,5 @@
 /*
+
 package dev.zio.quickstart
 import dev.zio.quickstart.NewtypeRefinedOps.validate
 import zio.prelude._
@@ -98,4 +99,4 @@ object Validations {
     else Validation.succeed(cd)
   }
 }
- */
+*/

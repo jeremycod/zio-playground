@@ -6,7 +6,7 @@ import io.getquill.jdbczio.Quill
 import io.getquill.{Query, SnakeCase}
 import zio._
 import zio.json.{DeriveJsonDecoder, DeriveJsonEncoder}
-
+import dev.zio.caliban.table
 object Implicits {
   implicit val mapDecoder = QuillJson.jsonDecoder[Map[String, String]]
   implicit val mapEncoder = QuillJson.jsonEncoder[Map[String, String]]
@@ -20,7 +20,7 @@ object Implicits {
 }
 
 
-class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService {
+class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService[table.Offer] {
   import quill._
 
 
@@ -75,6 +75,7 @@ class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataSt
     run(getReferenceOffers( version, offerBasePrice, currencyCode, countryCode))
   }
 
+  override val entityName: String = "offer"
 }
 object OfferServiceDataStore {
   def getOffers: ZIO[OfferServiceDataStore, Throwable, Seq[Offer]] =

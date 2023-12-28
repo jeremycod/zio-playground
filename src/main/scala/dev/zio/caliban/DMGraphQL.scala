@@ -1,10 +1,10 @@
 package dev.zio.caliban
 
-import caliban.CalibanError.{ExecutionError, ParsingError, ValidationError}
-import caliban.ResponseValue.ObjectValue
-import caliban.Value.StringValue
+//import caliban.CalibanError.{ExecutionError, ParsingError, ValidationError}
+//import caliban.ResponseValue.ObjectValue
+//import caliban.Value.StringValue
 import caliban.schema._
-import caliban.{CalibanError, GraphQLInterpreter, RootResolver, graphQL}
+import caliban.{RootResolver, graphQL}
 import dev.zio.caliban.Queries.Env
 
 import caliban.schema.ArgBuilder.auto._

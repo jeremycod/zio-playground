@@ -1,21 +1,22 @@
 package dev.zio.caliban
 
 import dev.zio.caliban.Queries.Env
-import dev.zio.caliban.persist.{OfferServiceDataStore, ProductServiceDataStore}
-import dev.zio.caliban.resolver.GetOffer
+import dev.zio.caliban.persist.{OfferProductServiceDataStore, OfferServiceDataStore, ProductServiceDataStore}
+import dev.zio.caliban.resolver.{GetOffer, GetProduct}
+import dev.zio.caliban.subgraph.{OfferView, Product}
 import dev.zio.caliban.transformer.OfferFinal
 import zio.query.ZQuery
 
 
 case class OffersQueryArgs(profile: String)
+case class ProductsQueryArgs(profile: String)
 
-
-case class FindAllOffersArgs(profile: String)
 final case class Queries(
-    offers: OffersQueryArgs => ZQuery[Env, Throwable, Seq[ZQuery[Env, Throwable, OfferFinal]]]
+   // offers: OffersQueryArgs => ZQuery[Env, Throwable, Seq[OfferView]],
+    products: ProductsQueryArgs => ZQuery[Env, Throwable, Seq[Product]]
 )
 object Queries {
-  type Env = OfferServiceDataStore with ProductServiceDataStore
+  type Env = OfferServiceDataStore with OfferProductServiceDataStore with ProductServiceDataStore
   val offers: String =
     """{
       |offers(profile : "main") {
@@ -41,7 +42,8 @@ object Queries {
 
 
   val live = Queries(
-    args => GetOffer.fetchAllOffers(args.profile)
+ //   args => GetOffer.fetchAllOffers(args.profile),
+    args => GetProduct.getAllProducts(args.profile)
   )
 
 }

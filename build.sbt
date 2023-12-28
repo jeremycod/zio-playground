@@ -14,6 +14,10 @@ val quillVersion = "4.8.0"
 //val Cron4ZioVersion = "1.0.0"
 val cronUtilsVersion = "9.2.0"
 val circeVersion = "0.14.5"
+val CalibanVersion = "2.5.0"
+val ZioHttpVersion = "3.0.0-RC1"
+val tapirVersion = "1.9.0"
+//Compile / run / fork := true
 
 libraryDependencies ++= Seq(
   "io.circe" %% "circe-core" % circeVersion,
@@ -24,11 +28,16 @@ libraryDependencies ++= Seq(
   "dev.zio" %% "zio-streams" % ZioVersion,
   "dev.zio" %% "zio-macros" % ZioVersion,
   "dev.zio" %% "zio-streams" % ZioVersion,
+  "dev.zio" %% "zio-http" % ZioHttpVersion,
   "dev.zio" %% "zio-test" % ZioVersion % Test,
   "dev.zio" %% "zio-json" % "0.3.0-RC8",
   "dev.zio" %% "zio-interop-reactivestreams" % "1.3.5",
+  "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-json-zio" % tapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-zio" % tapirVersion,
   "com.cronutils" % "cron-utils" % cronUtilsVersion,
-  "com.github.ghostdogpr" %% "caliban" % "2.3.1",
+  "com.github.ghostdogpr" %% "caliban" % CalibanVersion,
+  "com.github.ghostdogpr" %% "caliban-zio-http" % CalibanVersion,
   "io.getquill" %% "quill-zio" % quillVersion,
   "io.getquill" %% "quill-jdbc-zio" % quillVersion,
   "org.postgresql" % "postgresql" % "42.5.0",
@@ -46,5 +55,8 @@ libraryDependencies ++= Seq(
   "ch.qos.logback.contrib" % "logback-jackson" % LogbackContribVersion,
   "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % ScalaLoggingVersion,
-  "eu.timepit" %% "refined" % "0.9.27"
+  "eu.timepit" %% "refined" % "0.9.27",
+  "com.beachape" %% "enumeratum" % "1.7.3"
 )
+
+

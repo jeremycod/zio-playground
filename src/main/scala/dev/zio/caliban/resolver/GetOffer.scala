@@ -12,8 +12,7 @@ object GetOffer {
     val value = ZQuery.fromZIO(OfferServiceDataStore.getOffers)
       .map(_.map { offer =>
         val oView = OfferView.fromTable(offer)
-        val finalOffer = TiaraOfferTransformer.offerViewToTiara(oView)
-        finalOffer
+        oView
       })
 
     value
