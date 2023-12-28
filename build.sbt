@@ -40,6 +40,7 @@ libraryDependencies ++= Seq(
   "com.github.ghostdogpr" %% "caliban-zio-http" % CalibanVersion,
   "io.getquill" %% "quill-zio" % quillVersion,
   "io.getquill" %% "quill-jdbc-zio" % quillVersion,
+  "io.getquill" %% "quill-codegen-jdbc" % quillVersion,
   "org.postgresql" % "postgresql" % "42.5.0",
   "com.github.pureconfig" %% "pureconfig"   % "0.17.3",
   "com.opencsv" % "opencsv" % "5.5.2",
