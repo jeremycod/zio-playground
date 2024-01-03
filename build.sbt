@@ -20,19 +20,20 @@ val ZioHttpVersion = "3.0.0-RC1"
 val tapirVersion = "1.9.0"
 //Compile / run / fork := true
 
+//logLevel := Level.Debug
 lazy val root = (project in file("."))
-  .enablePlugins(CalibanPlugin)
+  //.enablePlugins(CalibanPlugin)
   .settings(
     name := "zio-playground-hello-world",
-    Compile / caliban / calibanSettings ++= Seq(
-      calibanSetting(file("zio-playground/src/main/graphql/sdl.gql"))(
+/*    Compile / caliban / calibanSettings +=
+      calibanSetting(file("graphql/sdl.graphql"))(
         // important to set this. otherwise you'll get client code
         _.genType(Codegen.GenType.Schema)
           // you can customize the codegen further with this DSL
           .clientName("NameOfApi.scala")
           .packageName("dev.zio.generated")
       )
-    ),
+    ,*/
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
