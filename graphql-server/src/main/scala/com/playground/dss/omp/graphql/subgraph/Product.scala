@@ -1,6 +1,7 @@
 package com.playground.dss.omp.graphql.subgraph
 
-import com.playground.dss.omp.graphql.table.{Product => ProductTbl}
+import com.playground.dss.omp.common.EntityStatuses
+import com.playground.dss.omp.graphql.table.{ProductWithAttributes, Product => ProductTbl}
 //import com.playground.dss.omp.genie.data.v3
 
 import java.util.Locale
@@ -12,13 +13,15 @@ import com.playground.dss.omp.graphql.utils.LegacyHelper._
 
 object Product {
 
+  private val defaultStartDate = "1970-01-01T00:00:00Z"
+
   val allProductEntityTypes: Set[Types.ProductEntityType] =
     Set(LIVE_TV, PAY_PER_VIEW, PREMIUM_NETWORKS, BASE, TEST, PREMIER_ACCESS, SEASONAL, FEATURE, ONE_TIME_PURCHASE)
   def findProductEntityTypeByName(name: String): Types.ProductEntityType =
     allProductEntityTypes.find(_.toString.toLowerCase(Locale.US) == name.toLowerCase(Locale.US)).getOrElse(TEST)
   // TODO: Would be better to fallback to UNKNOWN
 
-  def fromTable(r: ProductTbl): Types.Product = {
+  def fromTableWithAttributes(r: ProductWithAttributes): Types.Product = {
     val legacyMap = fromLegacyOptionString(r.legacy)
     val productId = UUID.fromString(r.id)
     val productType = findProductEntityTypeByName(legacyMap.getOrElse("disney_product_type", ""))
@@ -35,9 +38,9 @@ object Product {
         updatedDate = Some(r.datetime),
         entitlements = GetProduct.getProductEntitlements(productId, r.profile),
         tierDefinitions = List.empty,
-        status = "", // TODO:
-        startDate = "", // TODO:
-        endDate = None // TODO:
+        status = r.status.getOrElse(EntityStatuses.Live.stringRep),
+        startDate = r.eventDate.getOrElse(defaultStartDate),
+        endDate = r.catalogDate
       )
     } else
       Types.BaseProduct(
@@ -52,7 +55,7 @@ object Product {
         updatedDate = Some(r.datetime),
         entitlements = GetProduct.getProductEntitlements(productId, r.profile),
         tierDefinitions = List.empty,
-        status = "" // TODO:
+        status = r.status.getOrElse(EntityStatuses.Live.stringRep)
       )
   }
 }
