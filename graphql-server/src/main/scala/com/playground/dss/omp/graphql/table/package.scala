@@ -1,4 +1,4 @@
-package com.playground.dss.omp.graphql.table
+package com.playground.dss.omp.graphql.table.public
 
 final case class OfferTransition(
     offerId: String,
@@ -210,6 +210,7 @@ case class ProductWithAttributes(
                                   eventDate: Option[String],
                                   catalogDate: Option[String],
                                   status: Option[String]
+                                )
 
 case class Partner(
     id: String,

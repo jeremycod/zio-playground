@@ -1,6 +1,6 @@
 package com.playground.dss.omp.graphql.table
 
-import com.playground.dss.omp.graphql.table.{
+import com.playground.dss.omp.graphql.table.public.{
   Campaign,
   CampaignAttributeKey,
   CampaignAttributeValue,

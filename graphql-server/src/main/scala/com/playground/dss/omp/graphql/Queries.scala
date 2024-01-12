@@ -1,9 +1,10 @@
 package com.playground.dss.omp.graphql
 
 import com.playground.dss.omp.graphql.Queries.Env
-import com.playground.dss.omp.graphql.persist.ProductServiceDataStore
+import com.playground.dss.omp.graphql.persist.{ProductServiceDataStore, ProductServiceWriteDataStore}
 import com.playground.dss.omp.graphql.resolver.GetProduct
 import com.playground.dss.omp.graphql.security.Auth
+import com.playground.dss.omp.graphql.services.ProductService
 import com.playground.dss.omp.graphql.subgraph.Types._
 import zio.query.ZQuery
 import zio._
@@ -47,7 +48,7 @@ final case class Queries(
     tierDefinition: QueryTierDefinitionArgs => zio.UIO[scala.Option[TierDefinition]]*/
 )
 object Queries {
-  type Env = Auth & ProductServiceDataStore
+  type Env = Auth with ProductServiceDataStore with ProductServiceWriteDataStore with ProductService
   val live: Queries = Queries(
     args => GetProduct.getProduct(args),
     args => GetProduct.getAllProducts(args)

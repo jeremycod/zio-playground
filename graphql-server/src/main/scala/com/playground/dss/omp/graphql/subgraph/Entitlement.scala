@@ -1,6 +1,6 @@
 package com.playground.dss.omp.graphql.subgraph
 
-import com.playground.dss.omp.graphql.table.{Entitlement => EntitlementTbl}
+import com.playground.dss.omp.graphql.table.public.{Entitlement => EntitlementTbl}
 
 object Entitlement {
   def fromTable(r: EntitlementTbl): Types.Entitlement =

@@ -1,44 +1,91 @@
 package com.playground.dss.omp.graphql.persist
 
 import com.playground.dss.omp.graphql.{Errors, FixedSnakeCase}
-import com.playground.dss.omp.graphql.subgraph.Types.{QueryProductArgs, QueryProductsArgs}
-import io.getquill.jdbczio.Quill
-import io.getquill.{Query, Quoted}
+import com.playground.dss.omp.graphql.subgraph.Types.{ID, QueryProductArgs, QueryProductsArgs}
+import io.getquill.{Query, Quoted, SnakeCase}
 import zio._
 
 import java.sql.SQLException
-import com.playground.dss.omp.graphql.table.{Entitlement, Product}
+import com.playground.dss.omp.graphql.table.public
 import com.playground.dss.omp.graphql.subgraph.Types.{QueryProductArgs, QueryProductsArgs}
-import com.playground.dss.omp.graphql.table.Entitlement
+import com.playground.dss.omp.graphql.table.public.ProductWithAttributes
 import com.playground.dss.omp.graphql.{Errors, FixedSnakeCase, table}
+import io.getquill.jdbczio.Quill
 
 import java.util.UUID
 
 @SuppressWarnings(Array("org.wartremover.warts.All"))
-class ProductServiceDataStore(val quill: Quill.Postgres[FixedSnakeCase.type]) extends DataStoreService[table.Product] {
+class ProductServiceDataStore(override val quill: Quill.Postgres[SnakeCase.type])
+    extends DataStoreService[Product](quill) {
   import quill._
   override val entityName: String = "product"
 
-  def fetchProduct(profile: String, queryProductArgs: QueryProductArgs): ZIO[Any, SQLException, Option[table.Product]] = {
+  def fetchEntitlementsByNames(
+      entNames: List[String],
+      profile: String
+  ): ZIO[ProductServiceDataStore, Throwable, Seq[public.Entitlement]] = {
+    run {
+      for {
+        entVersion <-
+          query[public.Entitlement].filter(e => liftQuery(entNames).contains(e.name) && e.profile == lift(profile))
+            .groupByMap(p => (p.id, p.profile))(p => (p.id, p.profile, max(p.version)))
+        ent <- query[public.Entitlement].join(e =>
+                 e.id == entVersion._1 && e.profile == entVersion._2 && e.version == entVersion._3)
+      } yield ent
+    }
+  }
+
+  def fetchProduct(
+      profile: String,
+      id: ID
+  ): ZIO[Any, SQLException, Option[ProductWithAttributes]] = {
 
     run {
       for {
         prodVersion <-
-          query[table.Product].filter(p => p.id == lift(queryProductArgs.id.toString) && p.profile == lift(profile))
-            .groupByMap(p => (p.id, p.profile))(p =>
-              (p.id, p.profile, max(p.version)))
+          query[public.Product].filter(p => p.id == lift(id.toString) && p.profile == lift(profile))
+            .groupByMap(p => (p.id, p.profile))(p => (p.id, p.profile, max(p.version)))
         product <-
-          query[table.Product].join(p => p.id == prodVersion._1 && p.profile == prodVersion._2 && p.version == prodVersion._3)
-      } yield (product)
+          query[public.Product].join(p => p.id == prodVersion._1 && p.profile == prodVersion._2 && p.version == prodVersion._3)
+
+        evDate <-
+          query[public.ProductAttributeValue].leftJoin(pav =>
+            pav.productId == prodVersion._1 && pav.profile == prodVersion._2 && pav.version == prodVersion._3 && pav.key == "eventDate")
+        cDate <-
+          query[public.ProductAttributeValue].leftJoin(pav =>
+            pav.productId == prodVersion._1 && pav.profile == prodVersion._2 && pav.version == prodVersion._3 && pav.key == "catalogDate")
+        st <-
+          query[public.ProductAttributeValue].leftJoin(pav =>
+            pav.productId == prodVersion._1 && pav.profile == prodVersion._2 && pav.version == prodVersion._3 && pav.key == "status")
+
+      } yield ProductWithAttributes(
+        id = product.id,
+        name = product.name,
+        description = product.description,
+        legacy = product.legacy,
+        author = product.author,
+        datetime = product.datetime,
+        profile = product.profile,
+        version = product.version,
+        deleted = product.deleted,
+        eventDate = evDate.map(_.value),
+        catalogDate = cDate.map(_.value),
+        status = st.map(_.value)
+      )
+
     }.map(_.headOption)
   }
 
-  def fetchProducts(profile: String, queryProductArgs: QueryProductsArgs): ZIO[Any, SQLException, Seq[table.Product]] = {
-    val whereClause = if (queryProductArgs.productIds.isDefined) {
-      val ids = queryProductArgs.productIds.getOrElse(Seq.empty).map(id => s"'$id'").mkString(",")
-      s"WHERE profile = '$profile' and id in ($ids)"
-    } else
-      s"WHERE profile = '$profile'"
+  def fetchProducts(
+      profile: String,
+      queryProductArgs: QueryProductsArgs
+  ): ZIO[Any, SQLException, Seq[ProductWithAttributes]] = {
+    val whereClause =
+      if (queryProductArgs.productIds.isDefined) {
+        val ids = queryProductArgs.productIds.getOrElse(Seq.empty).map(id => s"'$id'").mkString(",")
+        s"WHERE profile = '$profile' and id in ($ids)"
+      } else
+        s"WHERE profile = '$profile'"
     val prodVersionSelector = versionSelector(whereClause)
     run(
       getProducts(prodVersionSelector)
@@ -47,14 +94,18 @@ class ProductServiceDataStore(val quill: Quill.Postgres[FixedSnakeCase.type]) ex
 
   protected def getProducts(
       versionSelector: String
-  ): Quoted[Query[table.Product]] = {
+  ): Quoted[Query[ProductWithAttributes]] = {
     quote {
-      sql"""SELECT e.* FROM products as e
-         JOIN (#$versionSelector) as vs ON e.id = vs.id and e.profile = vs.profile and e.version = vs.version"""
-        .as[Query[table.Product]]
+      sql"""SELECT e.* , pev1.value as event_date, pev2.value as catalog_date, pev3.value as status FROM products as e
+         JOIN (#$versionSelector) as vs ON e.id = vs.id and e.profile = vs.profile and e.version = vs.version
+         LEFT JOIN product_attribute_values as pev1 ON pev1.product_id = vs.id and pev1.profile = vs.profile and pev1.version = vs.version and pev1.key = 'eventDate'
+         LEFT JOIN product_attribute_values as pev2 ON pev2.product_id = vs.id and pev2.profile = vs.profile and pev2.version = vs.version and pev2.key='catalogDate'
+         LEFT JOIN product_attribute_values as pev3 ON pev3.product_id = vs.id and pev3.profile = vs.profile and pev3.version = vs.version and pev3.key='status'"""
+        .as[Query[ProductWithAttributes]]
     }
   }
-  def getProductEntitlements(productId: UUID, profile: String): ZIO[Any, SQLException, Seq[Entitlement]] = {
+
+  def getProductEntitlements(productId: UUID, profile: String): ZIO[Any, SQLException, Seq[public.Entitlement]] = {
     val entVersionSelector = versionSelectorByEntity("entitlement", s"WHERE profile = '$profile'")
     val prodVersionSelector = versionSelector(s"WHERE profile = '$profile' AND id = '$productId'")
     run(
@@ -62,7 +113,7 @@ class ProductServiceDataStore(val quill: Quill.Postgres[FixedSnakeCase.type]) ex
         sql"""SELECT e.* from entitlements as e JOIN(#$entVersionSelector)  as vs ON e.id = vs.id and e.profile = vs.profile and e.version = vs.version
                 JOIN product_entitlements pe on e.id = pe.entitlement_id
                   JOIN (#$prodVersionSelector) as pvs ON pe.product_id = pvs.id and pe.profile = pvs.profile and pe.version = pvs.version"""
-          .as[Query[Entitlement]]
+          .as[Query[public.Entitlement]]
       }
     )
   }
@@ -72,31 +123,44 @@ object ProductServiceDataStore {
 
   def fetchProduct(
       profile: String,
-      queryProductArgs: QueryProductArgs
-  ): ZIO[ProductServiceDataStore, Throwable, Option[table.Product]] =
-    ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchProduct(profile, queryProductArgs)
+      productId: ID
+  ): ZIO[ProductServiceDataStore, Throwable, Option[ProductWithAttributes]] =
+    ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchProduct(profile, productId)
       .catchAllCause(cause =>
-        ZIO.logErrorCause(s"Failed to retrieve product, ", cause) *> ZIO.fail(
+        ZIO.logErrorCause(s"Failed to retrieve product ${productId.toString}, ", cause) *> ZIO.fail(
           Errors.DataAccessErrorMsg(
-            s"Failed to retrieve product ${queryProductArgs.id} from DB: ${cause.failureOption.getOrElse("").toString} "))))
+            s"Failed to retrieve product ${productId.toString} from DB: ${cause.failureOption.map(
+              _.getMessage).getOrElse("")} "))))
 
   def fetchProducts(
       profile: String,
       queryProductArgs: QueryProductsArgs
-  ): ZIO[ProductServiceDataStore, Throwable, Seq[table.Product]] =
+  ): ZIO[ProductServiceDataStore, Throwable, Seq[ProductWithAttributes]] =
     ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchProducts(profile, queryProductArgs))
       .catchAllCause(cause =>
-        ZIO.logErrorCause(s"Failed to retrieve product, ", cause) *> ZIO.fail(
+        ZIO.logErrorCause(s"Failed to fetch products, ", cause) *> ZIO.fail(
           Errors.DataAccessErrorMsg(
-            s"Failed to retrieve products with arguments: ${queryProductArgs.toString} from DB: ${cause.failureOption.getOrElse(
-                "").toString} ")))
+            s"Failed to retrieve products with arguments: ${queryProductArgs.toString} from DB: ${cause.failureOption.map(_.getMessage).getOrElse(
+              "")} ")))
 
   def getProductEntitlements(
       productId: UUID,
       profile: String
-  ): ZIO[ProductServiceDataStore, Throwable, Seq[Entitlement]] =
+  ): ZIO[ProductServiceDataStore, Throwable, Seq[public.Entitlement]] =
     ZIO.serviceWithZIO[ProductServiceDataStore](_.getProductEntitlements(productId, profile))
 
-  val layer: ZLayer[Quill.Postgres[FixedSnakeCase.type], Nothing, ProductServiceDataStore] =
+  // TODO: Could be in entitlements data store
+  def fetchEntitlementsByNames(
+      entNames: List[String],
+      profile: String
+  ): ZIO[ProductServiceDataStore, Throwable, Seq[public.Entitlement]] =
+    ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchEntitlementsByNames(entNames, profile))
+      .catchAllCause(cause =>
+        ZIO.logErrorCause(s"Failed to retrieve entitlements, ", cause) *> ZIO.fail(
+          Errors.DataAccessErrorMsg(
+            s"Failed to retrieve entitlements by names: ${entNames.mkString(",")} from DB: ${cause.failureOption.map(_.getMessage).getOrElse(
+              "")} ")))
+
+  val layer: ZLayer[Quill.Postgres[SnakeCase.type], Nothing, ProductServiceDataStore] =
     ZLayer.fromFunction(new ProductServiceDataStore(_))
 }

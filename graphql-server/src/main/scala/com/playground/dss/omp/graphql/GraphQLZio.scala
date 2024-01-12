@@ -2,9 +2,10 @@ package com.playground.dss.omp.graphql
 
 import caliban.ZHttpAdapter
 import caliban.interop.tapir.HttpInterpreter
-import com.playground.dss.omp.graphql.persist.ProductServiceDataStore
+import com.playground.dss.omp.graphql.persist.{ProductServiceDataStore, ProductServiceWriteDataStore}
 import com.playground.dss.omp.graphql.security.Auth
-import com.playground.dss.omp.graphql.security.Auth
+import com.playground.dss.omp.graphql.services.ProductService
+import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
 import zio.http._
 import zio.http.Server
@@ -36,7 +37,9 @@ object GraphQLZio extends ZIOAppDefault {
       AppUtils.layer,
       AppConfig.layer,
       ProductServiceDataStore.layer,
-      Quill.Postgres.fromNamingStrategy(FixedSnakeCase),
+      ProductServiceWriteDataStore.layer,
+      ProductService.layer,
+      Quill.Postgres.fromNamingStrategy(SnakeCase),
       QuillDataSource.layer,
       Auth.http,
       ZLayer.fromZIO(ZIO.succeed(

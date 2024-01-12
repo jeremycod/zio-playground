@@ -1,7 +1,7 @@
 package com.playground.dss.omp.graphql.subgraph
 
 import com.playground.dss.omp.common.EntityStatuses
-import com.playground.dss.omp.graphql.table.{ProductWithAttributes, Product => ProductTbl}
+import com.playground.dss.omp.graphql.table.public.{ProductWithAttributes, Product => ProductTbl}
 //import com.playground.dss.omp.genie.data.v3
 
 import java.util.Locale
