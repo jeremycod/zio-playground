@@ -11,6 +11,6 @@ trait AccessHelper {
   def strToOffsetDateTime(value: String): OffsetDateTime = OffsetDateTime.parse(value)
 
   // Logging if this fails?
-  def strToBoolean(value: String): Boolean = value.toBoolean//Option.getOrElse(false)
+  def strToBoolean(value: String): Boolean = value.toBoolean //Option.getOrElse(false)
 
 }

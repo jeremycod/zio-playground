@@ -5,7 +5,6 @@ import enumeratum.EnumEntry._
 
 import java.util.Locale
 
-
 sealed trait ProductEntityType extends EnumEntry with Uppercase
 
 object ProductEntityType extends Enum[ProductEntityType] {
@@ -24,7 +23,5 @@ object ProductEntityType extends Enum[ProductEntityType] {
   case object UNKNOWN extends ProductEntityType
 
   def findByName(name: String): ProductEntityType =
-    values.find(_.toString.toLowerCase(Locale.US) == name.toLowerCase(Locale.US)
-    ).getOrElse(ProductEntityType.UNKNOWN)
+    values.find(_.toString.toLowerCase(Locale.US) == name.toLowerCase(Locale.US)).getOrElse(ProductEntityType.UNKNOWN)
 }
-

@@ -10,7 +10,7 @@ import zio.logging.backend.SLF4J
 
 import java.time.format.DateTimeFormatter
 case class DatabaseConfig(url: String, username: String, password: String)
-case class ApplicationConfiguration( databaseConfig: DatabaseConfig)
+case class ApplicationConfiguration(databaseConfig: DatabaseConfig)
 
 object AppConfig {
   implicit def productHint[A] = ProductHint[A](ConfigFieldMapping(CamelCase, CamelCase))
@@ -25,9 +25,9 @@ object AppConfig {
       label("thread", fiberId).color(LogColor.WHITE) |-|
       (space + label("user_id", userId).highlight) |-|
       label("message", quoted(line)).highlight +
-        (space + label("cause", cause).highlight).filter(LogFilter.causeNonEmpty)
+      (space + label("cause", cause).highlight).filter(LogFilter.causeNonEmpty)
 
   }
-  val logLayer           = Runtime.removeDefaultLoggers >>> SLF4J.slf4j(logFormat)
-  val layer                   = ZLayer.fromZIO(ZIO.fromEither(ConfigSource.default.load[ApplicationConfiguration])) +!+ logLayer
+  val logLayer = Runtime.removeDefaultLoggers >>> SLF4J.slf4j(logFormat)
+  val layer = ZLayer.fromZIO(ZIO.fromEither(ConfigSource.default.load[ApplicationConfiguration])) +!+ logLayer
 }

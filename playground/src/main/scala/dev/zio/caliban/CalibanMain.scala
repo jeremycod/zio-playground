@@ -17,9 +17,9 @@ object CalibanMain extends ZIOAppDefault {
     _ <- ZIO.logInfo("Initializing GraphQL server")
     interpreter <- DMGraphQL.interpreter
     httpApp = Routes(
-      Method.ANY / "api" / "graphql" ->
-        ZHttpAdapter.makeHttpService(HttpInterpreter(interpreter))
-    ).toHttpApp
+                Method.ANY / "api" / "graphql" ->
+                  ZHttpAdapter.makeHttpService(HttpInterpreter(interpreter))
+              ).toHttpApp
     _ <- Server.serve(httpApp)
     _ <- ZIO.logInfo("GraphQL server started")
   } yield ()
@@ -32,6 +32,7 @@ object CalibanMain extends ZIOAppDefault {
       Quill.Postgres.fromNamingStrategy(SnakeCase),
       QuillDataSource.layer,
       ZLayer.succeed(Server.Config.default.port(8091)),
-      Server.live)
+      Server.live
+    )
 
 }

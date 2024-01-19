@@ -17,7 +17,7 @@ object TiaraOfferTransformer {
     val result =
       for {
         prods <- offerView.products
-       //transformedProducts = prods.map(p => OfferProductTransformer.offerProductViewToFinalProduct(p))
+        //transformedProducts = prods.map(p => OfferProductTransformer.offerProductViewToFinalProduct(p))
         //newProds <- transformedProducts
         attributes <- offerView.attributes
       } yield OfferFinal(

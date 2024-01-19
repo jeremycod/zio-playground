@@ -51,16 +51,14 @@ class ProductServiceWriteDataStore(override val quill: Quill.Postgres[SnakeCase.
                liftQuery(attributes.map {
                  case (key, value) =>
                    ProductAttributeValue(savedProduct.id, key, value, savedProduct.profile, savedProduct.version)
-               }.toList).foreach(pe =>
-                 query[public.ProductAttributeValue].insertValue(pe).returning(r => r))
+               }.toList).foreach(pe => query[public.ProductAttributeValue].insertValue(pe).returning(r => r))
              }
            }
       _ <- run {
              quote {
                liftQuery(entitlementsIds.map(e =>
                  public.ProductEntitlement(savedProduct.id, e, savedProduct.profile, savedProduct.version))).foreach(
-                 pe =>
-                   query[public.ProductEntitlement].insertValue(pe).returning(r => r))
+                 pe => query[public.ProductEntitlement].insertValue(pe).returning(r => r))
              }
            }
     } yield savedProduct
@@ -84,10 +82,8 @@ object ProductServiceWriteDataStore {
       .catchAllCause(cause =>
         ZIO.logErrorCause(s"Failed to create product, ", cause) *> ZIO.fail(
           Errors.DataAccessErrorMsg(
-            s"Failed to create product from DB: ${
-                cause.failureOption.map(
-                  _.getMessage).getOrElse("")
-              } "))))
+            s"Failed to create product from DB: ${cause.failureOption.map(
+              _.getMessage).getOrElse("")} "))))
 
   val layer: ZLayer[Quill.Postgres[SnakeCase.type], Nothing, ProductServiceWriteDataStore] =
     ZLayer.fromFunction(new ProductServiceWriteDataStore(_))

@@ -113,7 +113,7 @@ final case class Offer(
     eligibility: Option[OfferEligibility]
 )
 
-  /*extends AccessHelper {
+/*extends AccessHelper {
   import Offer._
   val products: Map[String, OfferProduct] = Map.empty
   val legacy: Map[String, String] = Map.empty

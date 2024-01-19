@@ -4,11 +4,11 @@ package dev.zio.caliban.model
 //  other with standardRetailPrice as having both together makes no sense and makes coding around it more complex
 final case class OfferProduct(
     //standardRetailPrice: Option[Price],
-    referenceOffer: Option[String],
+    referenceOffer: Option[String]
     // phases: Seq[Phase],
     // legacy: Map[String, String],
     // Map(SKU code -> Map("country" -> Set(countries), "platforms" -> Set(platforms)))
-   // skus: Map[String, Map[String, Set[String]]]
+    // skus: Map[String, Map[String, Set[String]]]
 )
 
 object OfferProduct {

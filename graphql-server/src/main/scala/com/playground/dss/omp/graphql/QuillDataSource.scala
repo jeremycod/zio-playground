@@ -16,8 +16,9 @@ import zio.{Task, ZIO, ZLayer}
 
 object FixedSnakeCase extends SnakeCase {
 
-  override def table(name: String): String = if (name.endsWith("_metadata")) s"""\"${super.table(name)}\""""
-  else s"""\"${super.table(s"${name}s")}\""""
+  override def table(name: String): String =
+    if (name.endsWith("_metadata")) s"""\"${super.table(name)}\""""
+    else s"""\"${super.table(s"${name}s")}\""""
 
 }
 object QuillDataSource {
@@ -40,7 +41,6 @@ object QuillDataSource {
 
   def getDbConfig(conf: Config): DatabaseConfig =
     DatabaseConfig(
-
       url = conf.getString("url"),
       username = conf.getString("user"),
       password = conf.getString("password")

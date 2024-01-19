@@ -29,12 +29,12 @@ object JobSynchronizer {
         .zipRight(ZIO.logDebug(s"scheduled-job-success, jobName: $jobName"))
         .catchAllCause {
           cause =>
-   /*         ZIO.foreach(cause.defects) { e =>
+            /*         ZIO.foreach(cause.defects) { e =>
               val errorMessage = e.getMessage
               ZIO.logErrorCause(s"scheduled-job-failure, jobName: $jobName, errorMessage: $errorMessage", cause)
             }*/
-             ZIO.logError(s"Job $jobName failed because of:  ${cause.toString}")
-             // ZIO.logErrorCause(s"scheduled-job-failure, jobName: $jobName", cause)
+            ZIO.logError(s"Job $jobName failed because of:  ${cause.toString}")
+            // ZIO.logErrorCause(s"scheduled-job-failure, jobName: $jobName", cause)
             /*ZIO.foreach(cause.defects) { e =>
               val errorMessage = e.getMessage
               ZIO.logErrorCause(s"scheduled-job-failure, jobName: $jobName, errorMessage: $errorMessage", cause)
@@ -164,7 +164,7 @@ object JobsScheduler extends App {
       schedulerZone
     )
 
-   ZioSchedulerUnsafeFacade.unsafeRunAsyncScheduledZIO(
+    ZioSchedulerUnsafeFacade.unsafeRunAsyncScheduledZIO(
       "FirstJobService",
       runtime,
       jobSynchronizer,

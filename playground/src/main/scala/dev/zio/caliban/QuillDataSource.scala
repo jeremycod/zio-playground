@@ -4,29 +4,29 @@ import zio.ZIO
 import zio.{ZIO, _}
 import ZIO.{attempt, fromOption, logInfo}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 
 object QuillDataSource {
   private def mkDataSource(config: DatabaseConfig): Task[HikariDataSource] = {
     for {
       pgDataSource <- ZIO.attempt {
-        val dataSource = new org.postgresql.ds.PGSimpleDataSource()
-        dataSource.setURL(config.url)
-        dataSource.setUser(config.username)
-        dataSource.setPassword(config.password)
-        dataSource
-      }
+                        val dataSource = new org.postgresql.ds.PGSimpleDataSource()
+                        dataSource.setURL(config.url)
+                        dataSource.setUser(config.username)
+                        dataSource.setPassword(config.password)
+                        dataSource
+                      }
       hikariConfig <- ZIO.attempt {
-        val config = new HikariConfig()
-        config.setDataSource(pgDataSource)
-        config
-      }
+                        val config = new HikariConfig()
+                        config.setDataSource(pgDataSource)
+                        config
+                      }
       dataSource <- ZIO.attempt(new HikariDataSource(hikariConfig))
     } yield dataSource
   }
 
   val layer = ZLayer.fromZIO(ZIO.serviceWithZIO[AppConfig](config => mkDataSource(config.databaseConfig)))
-/*  val databaseURLOpt = Some("jdbc:postgresql://localhost:5432/")
+  /*  val databaseURLOpt = Some("jdbc:postgresql://localhost:5432/")
   private def mkDataSource: Task[HikariDataSource] =
     for {
      // databaseURLOpt <- System.env("DATABASE_URL").orDie
@@ -53,6 +53,6 @@ object QuillDataSource {
 
   yield (dataSource)*/
 
-/*  val layer: ZLayer[Any, Throwable, HikariDataSource] =
+  /*  val layer: ZLayer[Any, Throwable, HikariDataSource] =
     ZLayer.fromZIO(mkDataSource)*/
 }

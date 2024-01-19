@@ -1,19 +1,19 @@
 package dev.zio.caliban.persist
 import io.getquill.{Query, Quoted}
-import io.getquill.mirrorContextWithQueryProbing.{SqlInfixInterpolator, quote}
+import io.getquill.mirrorContextWithQueryProbing.{quote, SqlInfixInterpolator}
 trait DataStoreService[T] {
   val entityName: String
   def versionSelector(entityName: String, whereClause: String): String =
     s"""
-       |SELECT id, profile, MAX(version) AS version FROM ${entityName}s $whereClause GROUP BY id, profile
-       |""".stripMargin
+      |SELECT id, profile, MAX(version) AS version FROM ${entityName}s $whereClause GROUP BY id, profile
+      |""".stripMargin
 
   def versionSelector(whereClause: String): String = versionSelectorByEntity(entityName, whereClause)
 
   def versionSelectorByEntity(entName: String, whereClause: String): String =
     s"""
-       |SELECT id, profile, MAX(version) AS version FROM ${entName}s $whereClause GROUP BY id, profile
-       |""".stripMargin
+      |SELECT id, profile, MAX(version) AS version FROM ${entName}s $whereClause GROUP BY id, profile
+      |""".stripMargin
 
   protected def getMainEntityByProfile(profile: String): Quoted[Query[T]] = {
     val whereClause = s"WHERE profile = '$profile'"

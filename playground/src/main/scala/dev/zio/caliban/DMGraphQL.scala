@@ -4,7 +4,7 @@ package dev.zio.caliban
 //import caliban.ResponseValue.ObjectValue
 //import caliban.Value.StringValue
 import caliban.schema._
-import caliban.{RootResolver, graphQL}
+import caliban.{graphQL, RootResolver}
 import dev.zio.caliban.Queries.Env
 
 import caliban.schema.ArgBuilder.auto._
@@ -17,9 +17,9 @@ object DMGraphQL {
   val api = graphQL(
     RootResolver(Queries.live)
   )
-  val interpreter = api.interpreter//.map(errorHandler)
+  val interpreter = api.interpreter //.map(errorHandler)
 
-/*  private def errorHandler[R](
+  /*  private def errorHandler[R](
       interpreter: GraphQLInterpreter[R, CalibanError]
   ): GraphQLInterpreter[R, CalibanError] = interpreter.mapError {
     case err: ExecutionError =>

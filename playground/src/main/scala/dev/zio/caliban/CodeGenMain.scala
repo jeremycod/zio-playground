@@ -7,10 +7,9 @@ import io.getquill.codegen.jdbc.SimpleJdbcCodegen
 import org.postgresql.ds.PGSimpleDataSource
 object CodeGenMain extends App {
 
-
   val pgDataSource = new PGSimpleDataSource()
   pgDataSource.setURL(
-    "jdbc:postgresql://127.0.0.1:5432/reviewboard?ssl=false",
+    "jdbc:postgresql://127.0.0.1:5432/reviewboard?ssl=false"
   )
   pgDataSource.setUser("docker")
   pgDataSource.setPassword("docker")

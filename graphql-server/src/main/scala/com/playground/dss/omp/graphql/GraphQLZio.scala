@@ -16,7 +16,7 @@ import sttp.tapir.json.circe._
 
 @nowarn
 object GraphQLZio extends ZIOAppDefault {
-/*  val authenticator: ZIO[ApplicationConfiguration, Nothing, Authenticator] = for {
+  /*  val authenticator: ZIO[ApplicationConfiguration, Nothing, Authenticator] = for {
     jwkKey <- ZIO.serviceWithZIO[ApplicationConfiguration](config => ZIO.succeed(config.genieToken.jwkKey))
   } yield Authenticator.make(jwkKey)*/
 

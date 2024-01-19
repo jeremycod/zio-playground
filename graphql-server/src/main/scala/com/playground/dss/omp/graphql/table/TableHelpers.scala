@@ -35,7 +35,6 @@ object TableHelpers {
     )
   }
 
-
   def makeEntitlement(ent: String, authorName: String, profile: String): EntitlementTbl = {
     val id = UUID.randomUUID().toString
     val legacy = Map("disney_legacy_id" -> id).toJson

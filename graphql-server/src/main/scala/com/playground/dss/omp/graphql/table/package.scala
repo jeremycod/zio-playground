@@ -198,19 +198,19 @@ case class Product(
 )
 
 case class ProductWithAttributes(
-                                  id: String,
-                                  name: String,
-                                  description: Option[String],
-                                  legacy: Option[String],
-                                  author: String,
-                                  datetime: String,
-                                  profile: String,
-                                  version: Long,
-                                  deleted: Boolean,
-                                  eventDate: Option[String],
-                                  catalogDate: Option[String],
-                                  status: Option[String]
-                                )
+    id: String,
+    name: String,
+    description: Option[String],
+    legacy: Option[String],
+    author: String,
+    datetime: String,
+    profile: String,
+    version: Long,
+    deleted: Boolean,
+    eventDate: Option[String],
+    catalogDate: Option[String],
+    status: Option[String]
+)
 
 case class Partner(
     id: String,

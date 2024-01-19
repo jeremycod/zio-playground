@@ -17,7 +17,7 @@ object VotingExample extends scala.App {
   type Topic = Topic.Type
 
   final case class VoteState(map: Map[Topic, Votes]) { self =>
-   /* def combine(that: VoteState): VoteState =
+    /* def combine(that: VoteState): VoteState =
       VoteState(self.map combine that.map)*/
   }
 
@@ -28,6 +28,6 @@ object VotingExample extends scala.App {
   val leftVotes = VoteState(Map(zioHttp -> Votes(4), uziHttp -> Votes(2)))
   val rightVotes = VoteState(Map(zioHttp -> Votes(2), zioTlsHttp -> Votes(2)))
 
- // println(leftVotes combine rightVotes)
+  // println(leftVotes combine rightVotes)
   // Output: VoteState(Map(zio-http -> 6, uzi-http -> 2, zio-tls-http -> 2))
 }

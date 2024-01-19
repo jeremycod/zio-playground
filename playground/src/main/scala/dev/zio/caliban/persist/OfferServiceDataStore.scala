@@ -19,11 +19,8 @@ object Implicits {
 
 }
 
-
 class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService[table.Offer] {
   import quill._
-
-
 
   private def getOffers(entityName: String, versionSelector: String) = {
     quote {
@@ -44,7 +41,12 @@ class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataSt
     }
   }
 
-  private def getReferenceOffers(versionSelector: String, offerBasePrice: Int, currencyCode: String, countryCode: String) = {
+  private def getReferenceOffers(
+      versionSelector: String,
+      offerBasePrice: Int,
+      currencyCode: String,
+      countryCode: String
+  ) = {
     quote {
       sql"""SELECT o.*, oav.value as currencyCode, oav2.value as countries from offers as o
            JOIN(#$versionSelector) as vs ON o.id = vs.id and o.profile = vs.profile and o.version = vs.version
@@ -58,11 +60,11 @@ class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataSt
     }
   }
 
- def fetchOffers: ZIO[Any, Throwable, Seq[Offer]] = {
-   //val version = profileVersionSelector("offer", "main")
-   val version = versionSelector("offer", "where profile = 'main' and author='transform'")
-   run(getOffers("offer", version))
- }
+  def fetchOffers: ZIO[Any, Throwable, Seq[Offer]] = {
+    //val version = profileVersionSelector("offer", "main")
+    val version = versionSelector("offer", "where profile = 'main' and author='transform'")
+    run(getOffers("offer", version))
+  }
 
   def fetchAttributes(offerId: String): ZIO[Any, Throwable, Seq[Attribute]] = {
     //val version = profileVersionSelector("offer", "main")
@@ -70,9 +72,13 @@ class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataSt
     run(getAttributes("offer", version))
   }
 
-  def fetchReferenceOffersCandidates(offerBasePrice: Int, currencyCode: String, countryCode: String): ZIO[Any, Throwable, Seq[Offer]] = {
+  def fetchReferenceOffersCandidates(
+      offerBasePrice: Int,
+      currencyCode: String,
+      countryCode: String
+  ): ZIO[Any, Throwable, Seq[Offer]] = {
     val version = versionSelector("offer", "where profile = 'main' and author='transform'")
-    run(getReferenceOffers( version, offerBasePrice, currencyCode, countryCode))
+    run(getReferenceOffers(version, offerBasePrice, currencyCode, countryCode))
   }
 
   override val entityName: String = "offer"
@@ -81,8 +87,17 @@ object OfferServiceDataStore {
   def getOffers: ZIO[OfferServiceDataStore, Throwable, Seq[Offer]] =
     ZIO.serviceWithZIO[OfferServiceDataStore](_.fetchOffers)
 
-  def getReferenceOfferCandidates(offerId: String, productId: String, offerBasePrice: Int, currencyCode: String, countryCode: String): ZIO[OfferServiceDataStore, Throwable, Seq[Offer]] =
-    ZIO.serviceWithZIO[OfferServiceDataStore](_.fetchReferenceOffersCandidates(offerBasePrice, currencyCode, countryCode))
+  def getReferenceOfferCandidates(
+      offerId: String,
+      productId: String,
+      offerBasePrice: Int,
+      currencyCode: String,
+      countryCode: String
+  ): ZIO[OfferServiceDataStore, Throwable, Seq[Offer]] =
+    ZIO.serviceWithZIO[OfferServiceDataStore](_.fetchReferenceOffersCandidates(
+      offerBasePrice,
+      currencyCode,
+      countryCode))
 
   def getOfferAttributes(offerId: String): ZIO[OfferServiceDataStore, Throwable, Seq[Attribute]] =
     ZIO.serviceWithZIO[OfferServiceDataStore](_.fetchAttributes(offerId))

@@ -57,13 +57,14 @@ object Auth {
   }
   def middleware(): HandlerAspect[Auth, Unit] =
     Middleware.customAuthZIO { req =>
-      val identityProvider = if (true) Right(IdentityProvider("test@dev.zio","main"))
-      else Left(AuthenticationFailure(""))
+      val identityProvider =
+        if (true) Right(IdentityProvider("test@dev.zio", "main"))
+        else Left(AuthenticationFailure(""))
       //for {
-        //header <- bearerTokenFromZioRequest(req)
-        /*token <- authenticator.decryptToken(header)
+      //header <- bearerTokenFromZioRequest(req)
+      /*token <- authenticator.decryptToken(header)
         idp <- authenticator.safeAccess(token, java.lang.System.currentTimeMillis())*/
-     // } yield IdentityProvider("test@dev.zio","main")
+      // } yield IdentityProvider("test@dev.zio","main")
       identityProvider match {
         case Right(idp) => ZIO.serviceWithZIO[Auth](
             _.setScope(SessionScope(idp.name, idp.profile).some)).as(true)

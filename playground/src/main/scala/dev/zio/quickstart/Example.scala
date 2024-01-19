@@ -7,12 +7,8 @@ object Example extends ZIOAppDefault {
 
   private val program =
     for {
-      _ <- ZIO.fromFuture { _ =>
-        Future.failed(new RuntimeException("test"))
-      }
-      _ <- ZIO.fromFuture { _ =>
-        Future.failed(new RuntimeException("test 2"))
-      }
+      _ <- ZIO.fromFuture { _ => Future.failed(new RuntimeException("test")) }
+      _ <- ZIO.fromFuture { _ => Future.failed(new RuntimeException("test 2")) }
     } yield ()
 
   val schedule =

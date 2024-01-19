@@ -16,8 +16,8 @@ object ZIOLogging extends App {
 
   val x = functionA()
     .provideLayer(Runtime.removeDefaultLoggers >>> SLF4J.slf4j(
-    format = zio.logging.LogFormat.colored
-  ))
+      format = zio.logging.LogFormat.colored
+    ))
   Unsafe.unsafe { implicit unsafe =>
     Runtime.default.unsafe.run {
       x.debug("program")

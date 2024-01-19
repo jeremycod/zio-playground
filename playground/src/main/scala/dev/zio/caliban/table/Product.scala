@@ -10,4 +10,3 @@ final case class Product(
     profile: String,
     version: Long
 )
-

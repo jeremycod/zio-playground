@@ -37,7 +37,12 @@ object GetOffer {
       currencyCode: String,
       countryCode: String
   ): ZQuery[OfferServiceDataStore, Throwable, Option[ReferenceOfferView]] = {
-    val value = ZQuery.fromZIO(OfferServiceDataStore.getReferenceOfferCandidates(offerId, productId, offerBasePrice, currencyCode, countryCode)
+    val value = ZQuery.fromZIO(OfferServiceDataStore.getReferenceOfferCandidates(
+      offerId,
+      productId,
+      offerBasePrice,
+      currencyCode,
+      countryCode)
       .map(_.map { offer =>
         val oView = ReferenceOfferView.fromTable(offer)
         oView
@@ -45,7 +50,10 @@ object GetOffer {
     val selectedReferenceOffer = for {
       s <- value
       res = s.headOption
-      _ <- ZQuery.fromZIO(ZIO.logInfo(s"GET REFERENCE OFFER OFFER: $offerId product: $productId base price: $offerBasePrice currency: $currencyCode RES is defined ${res.map(r => r.id).getOrElse("NONE")} out of: ${s.map(_.id).mkString(",")}"))
+      _ <-
+        ZQuery.fromZIO(ZIO.logInfo(
+          s"GET REFERENCE OFFER OFFER: $offerId product: $productId base price: $offerBasePrice currency: $currencyCode RES is defined ${res.map(
+            r => r.id).getOrElse("NONE")} out of: ${s.map(_.id).mkString(",")}"))
     } yield res
     selectedReferenceOffer
   }

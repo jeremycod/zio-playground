@@ -1,6 +1,5 @@
 package dev.zio.caliban.subgraph
 
-
 import dev.zio.caliban.Queries.Env
 import dev.zio.caliban.model
 import dev.zio.caliban.persist.{OfferServiceDataStore, ProductServiceDataStore}
@@ -27,9 +26,7 @@ object OfferView {
       o.discountId,
       GetOffer.getAttributes(o.id),
       GetOfferProduct.getProducts(o.id)
-
     )
   }
-
 
 }

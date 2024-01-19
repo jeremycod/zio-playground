@@ -2,7 +2,6 @@ package dev.zio.caliban.subgraph
 
 import dev.zio.caliban.table
 
-
 case class ReferenceOfferView(
     id: String
 )
@@ -12,4 +11,3 @@ object ReferenceOfferView {
     ReferenceOfferView(o.id)
   }
 }
-

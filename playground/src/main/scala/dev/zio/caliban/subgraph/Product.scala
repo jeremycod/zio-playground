@@ -15,17 +15,17 @@ import java.util.UUID
 import dev.zio.caliban.table
 
 final case class Product(
-                          id: UUID,
-                          legacyId: Option[String],
-                          name: String,
-                          description: Option[String],
-                          `type`: ProductEntityType,
-                          createdBy: String,
-                          createdDate: String,
-                          updatedBy: Option[String],
-                          updatedDate: Option[String],
-                          entitlements: ZQuery[Env, Throwable, Set[Entitlement]]
-                        )
+    id: UUID,
+    legacyId: Option[String],
+    name: String,
+    description: Option[String],
+    `type`: ProductEntityType,
+    createdBy: String,
+    createdDate: String,
+    updatedBy: Option[String],
+    updatedDate: Option[String],
+    entitlements: ZQuery[Env, Throwable, Set[Entitlement]]
+)
 
 object Product {
 

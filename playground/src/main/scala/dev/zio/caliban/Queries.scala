@@ -7,12 +7,11 @@ import dev.zio.caliban.subgraph.{OfferView, Product}
 import dev.zio.caliban.transformer.OfferFinal
 import zio.query.ZQuery
 
-
 case class OffersQueryArgs(profile: String)
 case class ProductsQueryArgs(profile: String)
 
 final case class Queries(
-   // offers: OffersQueryArgs => ZQuery[Env, Throwable, Seq[OfferView]],
+    // offers: OffersQueryArgs => ZQuery[Env, Throwable, Seq[OfferView]],
     products: ProductsQueryArgs => ZQuery[Env, Throwable, Seq[Product]]
 )
 object Queries {
@@ -40,10 +39,8 @@ object Queries {
       |}
       |""".stripMargin
 
-
   val live = Queries(
- //   args => GetOffer.fetchAllOffers(args.profile),
-    args => GetProduct.getAllProducts(args.profile)
-  )
+    //   args => GetOffer.fetchAllOffers(args.profile),
+    args => GetProduct.getAllProducts(args.profile))
 
 }

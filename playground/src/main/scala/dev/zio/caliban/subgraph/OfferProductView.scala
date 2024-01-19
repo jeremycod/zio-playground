@@ -5,7 +5,7 @@ import dev.zio.caliban.resolver.{GetOffer, GetOfferProduct}
 import dev.zio.caliban.table
 import zio.query.ZQuery
 case class OfferProductView(
-                           productId: String,
+    productId: String,
     priceId: Option[String],
     referenceOffer: Option[String],
     refOffer: ZQuery[OfferServiceDataStore, Throwable, Option[ReferenceOfferView]],

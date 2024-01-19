@@ -9,7 +9,7 @@ import java.sql.SQLException
 import com.playground.dss.omp.graphql.table.public
 import com.playground.dss.omp.graphql.subgraph.Types.{QueryProductArgs, QueryProductsArgs}
 import com.playground.dss.omp.graphql.table.public.ProductWithAttributes
-import com.playground.dss.omp.graphql.{Errors, FixedSnakeCase, table}
+import com.playground.dss.omp.graphql.{table, Errors, FixedSnakeCase}
 import io.getquill.jdbczio.Quill
 
 import java.util.UUID
@@ -46,7 +46,8 @@ class ProductServiceDataStore(override val quill: Quill.Postgres[SnakeCase.type]
           query[public.Product].filter(p => p.id == lift(id.toString) && p.profile == lift(profile))
             .groupByMap(p => (p.id, p.profile))(p => (p.id, p.profile, max(p.version)))
         product <-
-          query[public.Product].join(p => p.id == prodVersion._1 && p.profile == prodVersion._2 && p.version == prodVersion._3)
+          query[public.Product].join(p =>
+            p.id == prodVersion._1 && p.profile == prodVersion._2 && p.version == prodVersion._3)
 
         evDate <-
           query[public.ProductAttributeValue].leftJoin(pav =>

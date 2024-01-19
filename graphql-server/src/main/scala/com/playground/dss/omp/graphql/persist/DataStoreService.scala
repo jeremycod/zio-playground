@@ -19,8 +19,8 @@ abstract class DataStoreService[T](val quill: Quill.Postgres[SnakeCase.type]) {
 
   def versionSelectorByEntity(entName: String, whereClause: String): String =
     s"""
-       |SELECT id, profile, MAX(version) AS version FROM ${entName}s $whereClause GROUP BY id, profile
-       |""".stripMargin
+      |SELECT id, profile, MAX(version) AS version FROM ${entName}s $whereClause GROUP BY id, profile
+      |""".stripMargin
 
   protected def getMainEntityByProfile(profile: String): Quoted[Query[T]] = {
     val whereClause = s"WHERE profile = '$profile'"

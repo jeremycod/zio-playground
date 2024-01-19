@@ -11,7 +11,7 @@ import dev.zio.caliban.table
 import io.circe
 import io.circe.jawn
 
-class ProductServiceDataStore (val quill: Quill.Postgres[SnakeCase]) extends DataStoreService[table.Product] {
+class ProductServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService[table.Product] {
   import quill._
   override val entityName: String = "product"
 
@@ -28,24 +28,22 @@ class ProductServiceDataStore (val quill: Quill.Postgres[SnakeCase]) extends Dat
     (legacy: String) => Map[String, String]("x" -> legacy)
   }
 
-
-/*  private def resolveLegacy = quote {
+  /*  private def resolveLegacy = quote {
     (legacy: String) => lift(from(legacy))
   }*/
 
   protected def getProducts(versionSelector: String): Quoted[Query[table.Product]] = {
-    val productTypes = Seq("AD_HOC","ONCE")
+    val productTypes = Seq("AD_HOC", "ONCE")
     quote {
 
       sql"""SELECT e.* FROM products as e
          JOIN (#$versionSelector) as vs ON e.id = vs.id and e.profile = vs.profile and e.version = vs.version"""
         .as[Query[table.Product]]
-        .map{ p => (p, p.legacy)}
+        .map { p => (p, p.legacy) }
         .filter(p =>
           if (productTypes.isEmpty) true
           else
-            false
-        ).map(p => p._1)
+            false).map(p => p._1)
     }
   }
 
@@ -64,9 +62,7 @@ class ProductServiceDataStore (val quill: Quill.Postgres[SnakeCase]) extends Dat
                   JOIN (#$prodVersionSelector) as pvs ON pe.product_id = pvs.id and pe.profile = pvs.profile and pe.version = pvs.version"""
           .as[Query[table.Entitlement]]
 
-
       }
-
     )
   }
 }
@@ -74,16 +70,17 @@ class ProductServiceDataStore (val quill: Quill.Postgres[SnakeCase]) extends Dat
 object ProductServiceDataStore {
   def fetchProducts(profile: String): ZIO[ProductServiceDataStore, Throwable, Seq[table.Product]] =
     ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchProducts(profile)
-
       .fold(
         fail => {
           throw fail
         },
         success => success
-
       ))
 
-  def getProductEntitlements(productId: UUID, profile: String): ZIO[ProductServiceDataStore, Throwable, Seq[table.Entitlement]] =
+  def getProductEntitlements(
+      productId: UUID,
+      profile: String
+  ): ZIO[ProductServiceDataStore, Throwable, Seq[table.Entitlement]] =
     ZIO.serviceWithZIO[ProductServiceDataStore](_.getProductEntitlements(productId, profile))
 
   val layer = ZLayer.fromFunction(new ProductServiceDataStore(_))

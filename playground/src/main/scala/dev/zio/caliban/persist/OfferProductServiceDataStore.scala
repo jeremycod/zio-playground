@@ -10,7 +10,6 @@ import dev.zio.caliban.table
 class OfferProductServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataStoreService[table.Offer] {
   import quill._
 
-
   def fetchProducts(offerId: String): ZIO[Any, SQLException, Seq[OfferProduct]] = {
     val version = versionSelector("offer", "where profile = 'main' and author='transform'")
     run(getOfferProducts("offer_product", version, offerId))

@@ -4,22 +4,25 @@ import com.playground.dss.omp.graphql.Queries.Env
 import com.playground.dss.omp.graphql.persist.ProductServiceDataStore
 import com.playground.dss.omp.graphql.security.Auth
 import com.playground.dss.omp.graphql.services.ProductService
-import com.playground.dss.omp.graphql.subgraph.Types.{MutationCreateBaseProductArgs, MutationCreateOneTimePurchaseProductArgs}
+import com.playground.dss.omp.graphql.subgraph.Types.{
+  MutationCreateBaseProductArgs,
+  MutationCreateOneTimePurchaseProductArgs
+}
 import zio._
 final case class Mutations(
-                             /* createOfferD2C: MutationCreateOfferD2CArgs => zio.UIO[scala.Option[Offer]],
+    /* createOfferD2C: MutationCreateOfferD2CArgs => zio.UIO[scala.Option[Offer]],
                              updateOfferD2C: MutationUpdateOfferD2CArgs => zio.UIO[scala.Option[Offer]],
                              createOfferIAP: MutationCreateOfferIAPArgs => zio.UIO[scala.Option[Offer]],
                              updateOfferIAP: MutationUpdateOfferIAPArgs => zio.UIO[scala.Option[Offer]],
                              updateOfferStatus: MutationUpdateOfferStatusArgs => zio.UIO[scala.Option[Offer]],
                              updateOfferAccounting: MutationUpdateOfferAccountingArgs => zio.UIO[scala.Option[Offer]],*/
-                             createBaseProduct: MutationCreateBaseProductArgs => ZIO[Env, Throwable, scala.Option[Product]],
-                             // updateBaseProduct: MutationUpdateBaseProductArgs => zio.UIO[Product],
-                             createOneTimePurchaseProduct: MutationCreateOneTimePurchaseProductArgs => ZIO[Env, Throwable, scala.Option[Product]],
-                             // updateOneTimePurchaseProduct: MutationUpdateOneTimePurchaseProductArgs => zio.UIO[Product],
-                             // updateProductStatus: MutationUpdateProductStatusArgs => zio.UIO[Product],
-                             // createEntitlement: MutationCreateEntitlementArgs => zio.UIO[Entitlement],
-                             /*createCampaignD2C: MutationCreateCampaignD2CArgs => zio.UIO[scala.Option[CampaignD2C]],
+    createBaseProduct: MutationCreateBaseProductArgs => ZIO[Env, Throwable, scala.Option[Product]],
+    // updateBaseProduct: MutationUpdateBaseProductArgs => zio.UIO[Product],
+    createOneTimePurchaseProduct: MutationCreateOneTimePurchaseProductArgs => ZIO[Env, Throwable, scala.Option[Product]]
+    // updateOneTimePurchaseProduct: MutationUpdateOneTimePurchaseProductArgs => zio.UIO[Product],
+    // updateProductStatus: MutationUpdateProductStatusArgs => zio.UIO[Product],
+    // createEntitlement: MutationCreateEntitlementArgs => zio.UIO[Entitlement],
+    /*createCampaignD2C: MutationCreateCampaignD2CArgs => zio.UIO[scala.Option[CampaignD2C]],
                              updateCampaignD2C: MutationUpdateCampaignD2CArgs => zio.UIO[scala.Option[CampaignD2C]],
                              createCampaignIAP: MutationCreateCampaignIAPArgs => zio.UIO[scala.Option[CampaignIAP]],
                              updateCampaignIAP: MutationUpdateCampaignIAPArgs => zio.UIO[scala.Option[CampaignIAP]],
@@ -40,7 +43,7 @@ final case class Mutations(
                              createSku: MutationCreateSkuArgs => zio.UIO[SKU],
                              updateSku: MutationUpdateSkuArgs => zio.UIO[SKU],
                              createRedemptionCodes: MutationCreateRedemptionCodesArgs => zio.UIO[CodeGenTask]*/
-                           )
+)
 object Mutations {
   val live: Mutations = Mutations(
     args => ProductService.createBaseProduct(args.product),
