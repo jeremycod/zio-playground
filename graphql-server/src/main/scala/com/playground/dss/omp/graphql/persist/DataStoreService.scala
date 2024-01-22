@@ -14,6 +14,7 @@ abstract class DataStoreService[T](val quill: Quill.Postgres[SnakeCase.type]) {
   implicit val entitlementSchema = schemaMeta[public.Entitlement]("entitlements")
   implicit val entitlementIdSchema = schemaMeta[public.EntitlementId]("entitlement_ids")
   implicit val productAttributeValue = schemaMeta[public.ProductAttributeValue]("product_attribute_values")
+  implicit val productEntitlementsValue = schemaMeta[public.ProductEntitlement]("product_entitlements")
 
   def versionSelector(whereClause: String): String = versionSelectorByEntity(entityName, whereClause)
 

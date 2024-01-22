@@ -51,7 +51,7 @@ object Queries {
   type Env = Auth with ProductServiceDataStore with ProductServiceWriteDataStore with ProductService
   val live: Queries = Queries(
     args => GetProduct.getProduct(args),
-    args => GetProduct.getAllProducts(args)
+    args => GetProduct.getAllProducts(args.types.getOrElse(List.empty), args.productIds.getOrElse(List.empty))
   )
 
 }

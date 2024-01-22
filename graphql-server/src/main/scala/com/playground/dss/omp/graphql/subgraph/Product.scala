@@ -36,7 +36,7 @@ object Product {
         createdDate = r.datetime,
         updatedBy = Some(r.author),
         updatedDate = Some(r.datetime),
-        entitlements = GetProduct.getProductEntitlements(productId, r.profile),
+        entitlements = GetProduct.getProductEntitlements(productId, r.profile, r.version),
         tierDefinitions = List.empty,
         status = r.status.getOrElse(EntityStatuses.Live.stringRep),
         startDate = r.eventDate.getOrElse(defaultStartDate),
@@ -53,7 +53,7 @@ object Product {
         createdDate = r.datetime,
         updatedBy = Some(r.author),
         updatedDate = Some(r.datetime),
-        entitlements = GetProduct.getProductEntitlements(productId, r.profile),
+        entitlements = GetProduct.getProductEntitlements(productId, r.profile, r.version),
         tierDefinitions = List.empty,
         status = r.status.getOrElse(EntityStatuses.Live.stringRep)
       )

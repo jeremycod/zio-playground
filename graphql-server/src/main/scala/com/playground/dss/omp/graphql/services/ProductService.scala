@@ -8,6 +8,8 @@ import com.playground.dss.omp.graphql.security.SecurityHelpers
 import com.playground.dss.omp.graphql.subgraph.Product
 import com.playground.dss.omp.graphql.subgraph.Types._
 import com.playground.dss.omp.graphql.table.TableHelpers
+import com.playground.dss.omp.graphql.Errors
+import com.playground.dss.omp.graphql.Errors.DataInputErrorMsg
 import zio._
 
 import java.util.UUID
@@ -16,31 +18,50 @@ trait ProductService {
   def createBaseProduct(product: CreateOrEditBaseProductInput): ZIO[Env, Throwable, scala.Option[Product]]
   def createOneTimePurchaseProduct(product: CreateOrEditOneTimePurchaseProductInput)
       : ZIO[Env, Throwable, scala.Option[Product]]
+
+  def updateBaseProduct(id: ID, product: CreateOrEditBaseProductInput): ZIO[Env, Throwable, scala.Option[Product]]
+
+  def updateOneTimePurchaseProduct(
+                                    id: ID,
+                                    product: CreateOrEditOneTimePurchaseProductInput
+                                  ): ZIO[Env, Throwable, scala.Option[Product]]
 }
 class ProductServiceLive() extends ProductService {
 
-  private def createProduct(
-      productName: String,
-      productDescription: scala.Option[String],
-      productType: ProductEntityType,
-      attributes: Map[String, String],
-      entitlements: List[String]
-  ): ZIO[Env, Throwable, scala.Option[Product]] = {
+  private def createUpdateProduct(
+                                   productId: ID,
+                                   productName: String,
+                                   productDescription: scala.Option[String],
+                                   productType: ProductEntityType,
+                                   attributes: Map[String, String],
+                                   entitlementNames: List[String]
+                                 ): ZIO[Env, Throwable, scala.Option[Product]] = {
     for {
       profile <- SecurityHelpers.getProfile
       user <- SecurityHelpers.getUser
       productId = UUID.randomUUID()
-      existingEntitlements <- ProductServiceDataStore.fetchEntitlementsByNames(entitlements, profile)
+      existingEntitlements <- ProductServiceDataStore.fetchEntitlementsByNames(entitlementNames, profile)
       productToCreate =
         TableHelpers.makeProduct(productId, productName, productDescription, productType, user, profile)
       existingNames = existingEntitlements.map(ent => ent.name)
       missingEntitlements =
-        entitlements.filterNot(e => existingNames.contains(e)).map(e => TableHelpers.makeEntitlement(e, user, profile))
+        entitlementNames.filterNot(e => existingNames.contains(e)).map(e => TableHelpers.makeEntitlement(e, user, profile))
+      _ <-
+        if (missingEntitlements.sizeIs > 0) ZIO.fail(DataInputErrorMsg(
+          Errors.ErrorCode.INCORRECT_REQUEST,
+          s"Error while trying to create product. Entitlements ${missingEntitlements.mkString(",")} not found in DB",
+          Map(
+            "missing entitlements" -> missingEntitlements.mkString(",")
+          )
+        ))
+        else ZIO.succeed(())
+      productToCreate =
+        TableHelpers.makeProduct(productId, productName, productDescription, productType, user, profile)
+
       _ <- ProductServiceWriteDataStore.createProduct(
-             productToCreate,
-             attributes,
-             existingEntitlements.map(_.id).toList,
-             missingEntitlements)
+        productToCreate,
+        attributes,
+        existingEntitlements.map(_.id).toList)
 
       productWithAttributes <- ProductServiceDataStore.fetchProduct(profile, productId)
 
@@ -51,7 +72,13 @@ class ProductServiceLive() extends ProductService {
     val attributes = Map(
       "status" -> "DRAFT"
     )
-    createProduct(product.name, product.description, product.`type`, attributes, product.entitlements)
+    createUpdateProduct(
+      UUID.randomUUID(),
+      product.name,
+      product.description,
+      product.`type`,
+      attributes,
+      product.entitlements)
   }
 
   override def createOneTimePurchaseProduct(product: CreateOrEditOneTimePurchaseProductInput)
@@ -61,7 +88,41 @@ class ProductServiceLive() extends ProductService {
       "eventDate" -> product.startDate,
       "catalogDate" -> product.endDate
     )
-    createProduct(product.name, product.description, product.`type`, attributes, product.entitlements)
+    createUpdateProduct(
+      UUID.randomUUID(),
+      product.name,
+      product.description,
+      product.`type`,
+      attributes,
+      product.entitlements)
+  }
+
+  override def updateBaseProduct(
+                                  id: ID,
+                                  product: CreateOrEditBaseProductInput
+                                ): ZIO[Env, Throwable, scala.Option[Product]] = {
+    val attributes = Map(
+      "Status" -> "DRAFT"
+    )
+    createUpdateProduct(id, product.name, product.description, product.`type`, attributes, product.entitlements)
+  }
+
+  override def updateOneTimePurchaseProduct(
+                                             id: ID,
+                                             product: CreateOrEditOneTimePurchaseProductInput
+                                           ): ZIO[Env, Throwable, scala.Option[Product]] = {
+    val attributes = Map(
+      "Status" -> "DRAFT",
+      "eventDate" -> product.startDate,
+      "catalogDate" -> product.endDate
+    )
+    createUpdateProduct(
+      UUID.randomUUID(),
+      product.name,
+      product.description,
+      product.`type`,
+      attributes,
+      product.entitlements)
   }
 }
 object ProductService {
