@@ -1,6 +1,7 @@
 package com.playground.dss.omp.graphql.subgraph
 
 import com.playground.dss.omp.common.EntityStatuses
+import com.playground.dss.omp.graphql.subgraph.Types.ProductEntityType
 import com.playground.dss.omp.graphql.table.public.{ProductWithAttributes, Product => ProductTbl}
 //import com.playground.dss.omp.genie.data.v3
 
@@ -15,11 +16,20 @@ object Product {
 
   private val defaultStartDate = "1970-01-01T00:00:00Z"
 
-  val allProductEntityTypes: Set[Types.ProductEntityType] =
+
+  private val allProductEntityTypes: Set[Types.ProductEntityType] =
     Set(LIVE_TV, PAY_PER_VIEW, PREMIUM_NETWORKS, BASE, TEST, PREMIER_ACCESS, SEASONAL, FEATURE, ONE_TIME_PURCHASE)
+
+  val oneTimePurchaseTypes: Set[Types.ProductEntityType] =
+    Set(Types.ProductEntityType.PREMIER_ACCESS, Types.ProductEntityType.PAY_PER_VIEW, Types.ProductEntityType.SEASONAL)
   def findProductEntityTypeByName(name: String): Types.ProductEntityType =
     allProductEntityTypes.find(_.toString.toLowerCase(Locale.US) == name.toLowerCase(Locale.US)).getOrElse(TEST)
   // TODO: Would be better to fallback to UNKNOWN
+
+  def retrieveProductEntityType(legacy: Option[String]): ProductEntityType = {
+    val legacyMap = fromLegacyOptionString(legacy)
+    findProductEntityTypeByName(legacyMap.getOrElse("disney_product_type", ""))
+  }
 
   def fromTableWithAttributes(r: ProductWithAttributes): Types.Product = {
     val legacyMap = fromLegacyOptionString(r.legacy)

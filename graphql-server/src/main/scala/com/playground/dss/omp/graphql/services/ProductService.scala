@@ -5,7 +5,7 @@ import com.playground.dss.omp.graphql.subgraph.Types.CreateOrEditBaseProductInpu
 import com.playground.dss.omp.graphql.Queries.Env
 import com.playground.dss.omp.graphql.persist.{ProductServiceDataStore, ProductServiceWriteDataStore}
 import com.playground.dss.omp.graphql.security.SecurityHelpers
-import com.playground.dss.omp.graphql.subgraph.Product
+import com.playground.dss.omp.graphql.subgraph.{Product, Types, Entitlement}
 import com.playground.dss.omp.graphql.subgraph.Types._
 import com.playground.dss.omp.graphql.table.TableHelpers
 import com.playground.dss.omp.graphql.Errors
@@ -25,6 +25,10 @@ trait ProductService {
                                     id: ID,
                                     product: CreateOrEditOneTimePurchaseProductInput
                                   ): ZIO[Env, Throwable, scala.Option[Product]]
+
+  def updateProductStatus(id: ID, productStatusType: ProductStatusType): ZIO[Env, Throwable, scala.Option[Product]]
+
+  def createEntitlement(entitlement: CreateEntitlementInput): ZIO[Env, Throwable, scala.Option[Types.Entitlement]]
 }
 class ProductServiceLive() extends ProductService {
 
@@ -124,14 +128,72 @@ class ProductServiceLive() extends ProductService {
       attributes,
       product.entitlements)
   }
+
+  override def updateProductStatus(
+                                    id: ID,
+                                    productStatusType: ProductStatusType
+                                  ): ZIO[Env, Throwable, scala.Option[Product]] = for {
+    profile <- SecurityHelpers.getProfile
+    existingProduct <- ProductServiceDataStore.fetchProduct(profile, id).someOrFail(Errors.DataAccessErrorMsg(
+      Errors.ErrorCode.DATA_ACCESS_ERROR,
+      s"Failed to update product status. Product: ${id.toString} not found in DB",
+      Map("product id" -> id.toString, "new status" -> productStatusType.toString)
+    ))
+
+    entitlements <- ProductServiceDataStore.getProductEntitlements(id, profile, existingProduct.version)
+    productType = Product.retrieveProductEntityType(existingProduct.legacy)
+
+    newAttributes = if (Product.oneTimePurchaseTypes.contains(productType))
+      Map(
+        "status" -> productStatusType.toString,
+        "eventDate" -> existingProduct.eventDate.getOrElse(""),
+        "catalogDate" -> existingProduct.catalogDate.getOrElse("")
+      )
+    else Map(
+      "status" -> productStatusType.toString
+    )
+    _ <- createUpdateProduct(
+      id,
+      existingProduct.name,
+      existingProduct.description,
+      productType,
+      newAttributes,
+      entitlements.map(_.name).toList)
+    updatedProduct <- ProductServiceDataStore.fetchProduct(profile, id)
+  } yield updatedProduct.map(p => Product.fromTableWithAttributes(p))
+
+  override def createEntitlement(entitlement: CreateEntitlementInput)
+  : ZIO[Env, Throwable, scala.Option[Types.Entitlement]] = for {
+    profile <- SecurityHelpers.getProfile
+    user <- SecurityHelpers.getUser
+    entitlementToCreate = TableHelpers.makeEntitlement(entitlement.name, user, profile)
+    _ <- ProductServiceWriteDataStore.createEntitlement(entitlementToCreate)
+    entitlement <- ProductServiceDataStore.fetchEntitlementById(entitlementToCreate.profile, entitlementToCreate.id)
+
+  } yield entitlement.map(Entitlement.fromTable)
 }
 object ProductService {
   def createBaseProduct(product: CreateOrEditBaseProductInput): ZIO[Env, Throwable, scala.Option[Product]] =
     ZIO.serviceWithZIO[ProductService](_.createBaseProduct(product))
 
   def createOneTimePurchaseProduct(product: CreateOrEditOneTimePurchaseProductInput)
-      : ZIO[Env, Throwable, scala.Option[Product]] =
+  : ZIO[Env, Throwable, scala.Option[Product]] =
     ZIO.serviceWithZIO[ProductService](_.createOneTimePurchaseProduct(product))
+
+  def updateBaseProduct(id: ID, product: CreateOrEditBaseProductInput): ZIO[Env, Throwable, scala.Option[Product]] =
+    ZIO.serviceWithZIO[ProductService](_.updateBaseProduct(id, product))
+
+  def updateOneTimePurchaseProduct(
+                                    id: ID,
+                                    product: CreateOrEditOneTimePurchaseProductInput
+                                  ): ZIO[Env, Throwable, scala.Option[Product]] =
+    ZIO.serviceWithZIO[ProductService](_.updateOneTimePurchaseProduct(id, product))
+
+  def updateProductStatus(id: ID, productStatusType: ProductStatusType): ZIO[Env, Throwable, scala.Option[Product]] =
+    ZIO.serviceWithZIO[ProductService](_.updateProductStatus(id, productStatusType))
+
+  def createEntitlement(entitlement: CreateEntitlementInput): ZIO[Env, Throwable, scala.Option[Entitlement]] =
+    ZIO.serviceWithZIO[ProductService](_.createEntitlement(entitlement))
 
   val layer: ULayer[ProductServiceLive] = ZLayer.succeed(new ProductServiceLive())
 

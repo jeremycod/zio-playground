@@ -137,6 +137,22 @@ class ProductServiceDataStore(override val quill: Quill.Postgres[SnakeCase.type]
       } yield entitlement
     }
   }
+
+  def fetchEntitlement(
+                        profile: String,
+                        id: String
+                      ): ZIO[Any, SQLException, Option[Entitlement]] = {
+    run {
+      for {
+        entVersion <- query[Entitlement].filter(e => e.id == lift(id) && e.profile == lift(profile))
+          .groupByMap(e => (e.id, e.profile))(e =>
+            (e.id, e.profile, max(e.version)))
+        ent <- query[Entitlement].join(e =>
+          e.id == entVersion._1 && e.profile == entVersion._2 && e.version == entVersion._3)
+      } yield ent
+
+    }.map(_.headOption)
+  }
 }
 
 object ProductServiceDataStore {
@@ -190,6 +206,21 @@ object ProductServiceDataStore {
             s"Failed to retrieve entitlements by names: ${entNames.mkString(",")} from DB: ${cause.failureOption.map(_.getMessage).getOrElse(
               "")} "
           )))
+
+  def fetchEntitlementById(
+                            profile: String,
+                            entitlementId: String
+                          ): ZIO[ProductServiceDataStore, Throwable, scala.Option[Entitlement]] = {
+    ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchEntitlement(profile, entitlementId))
+      .catchAllCause(cause =>
+        ZIO.logErrorCause(s"Failed to retrieve entitlement ${entitlementId}, ", cause) *> ZIO.fail(
+          Errors.DataAccessErrorMsg(
+            Errors.ErrorCode.DATA_ACCESS_ERROR,
+            s"Failed to retrieve product ${entitlementId} from DB: ${
+              cause.failureOption.map(
+                _.getMessage).getOrElse("")
+            } ")))
+  }
 
   val layer: ZLayer[Quill.Postgres[SnakeCase.type], Nothing, ProductServiceDataStore] =
     ZLayer.fromFunction(new ProductServiceDataStore(_))
