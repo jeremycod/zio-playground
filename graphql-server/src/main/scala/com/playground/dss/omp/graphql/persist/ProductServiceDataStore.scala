@@ -187,10 +187,17 @@ object ProductServiceDataStore {
       profile: String,
       productIds: List[ID]
   ): ZIO[ProductServiceDataStore, Throwable, Seq[ProductWithAttributes]] =
-    ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchProducts(
-      profile,
-      productIds.map(_.toString),
-      productIds.isEmpty))
+    ZIO.serviceWithZIO[ProductServiceDataStore](
+      _.fetchProducts(
+        profile,
+        productIds.map(_.toString),
+        productIds.isEmpty)
+        .timed
+        .flatMap {
+          case (duration, value) => ZIO.logInfo(s"GetProducts Query took ${duration.render}")
+              .as(value)
+        }
+    )
       .catchAllCause(cause =>
         ZIO.logErrorCause(s"Failed to fetch products, ", cause) *> ZIO.fail(
           Errors.DataAccessErrorMsg(
@@ -203,7 +210,15 @@ object ProductServiceDataStore {
       profile: String,
       productIdVersions: List[(String, Long)]
   ): ZIO[ProductServiceDataStore, Throwable, Seq[(String, Entitlement)]] =
-    ZIO.serviceWithZIO[ProductServiceDataStore](_.getProductEntitlements(profile, productIdVersions))
+    ZIO.serviceWithZIO[ProductServiceDataStore](
+      _.getProductEntitlements(profile, productIdVersions)
+        .timed
+        .flatMap {
+          case (duration, value) => ZIO.logInfo(s"GetProductEntitlements Query took ${duration.render}")
+            .as(value)
+        }
+
+    )
 
   // TODO: Could be in entitlements data store
   def fetchEntitlementsByNames(

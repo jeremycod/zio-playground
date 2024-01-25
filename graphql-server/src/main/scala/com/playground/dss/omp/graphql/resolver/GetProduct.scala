@@ -30,7 +30,7 @@ object GetProduct {
   private val productsDataSource: DataSource[Env, ProductsRequest] = {
     DataSource.fromFunctionBatchedZIO("GetProduct") { requests =>
     {
-      ZIO.foreachPar(requests) { req =>
+      ZIO.foreach(requests) { req =>
         for {
           profile <- SecurityHelpers.getProfile
           products <- ProductServiceDataStore.fetchProducts(profile, req.productIds)
@@ -44,7 +44,7 @@ object GetProduct {
             else req.productTypes.contains(LegacyHelper.findInLegacyString(
               p.legacy,
               "disney_product_type").getOrElse("")))
-          finalProducts <- ZIO.foreachPar(filteredProducts)(p => ZIO.succeed(Product.fromTableWithAttributes(p)))
+          finalProducts <- ZIO.succeed(filteredProducts.map(p => Product.fromTableWithAttributes(p)))
         } yield finalProducts.toList
       }
     }
