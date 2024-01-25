@@ -5,7 +5,7 @@ import com.playground.dss.omp.graphql.subgraph.Types.CreateOrEditBaseProductInpu
 import com.playground.dss.omp.graphql.Queries.Env
 import com.playground.dss.omp.graphql.persist.{ProductServiceDataStore, ProductServiceWriteDataStore}
 import com.playground.dss.omp.graphql.security.SecurityHelpers
-import com.playground.dss.omp.graphql.subgraph.{Product, Types, Entitlement}
+import com.playground.dss.omp.graphql.subgraph.{Entitlement, Product, Types}
 import com.playground.dss.omp.graphql.subgraph.Types._
 import com.playground.dss.omp.graphql.table.TableHelpers
 import com.playground.dss.omp.graphql.Errors
@@ -140,7 +140,7 @@ class ProductServiceLive() extends ProductService {
       Map("product id" -> id.toString, "new status" -> productStatusType.toString)
     ))
 
-    entitlements <- ProductServiceDataStore.getProductEntitlements(id, profile, existingProduct.version)
+    entitlements <- ProductServiceDataStore.getProductEntitlements(profile, List((id.toString, existingProduct.version)))
     productType = Product.retrieveProductEntityType(existingProduct.legacy)
 
     newAttributes = if (Product.oneTimePurchaseTypes.contains(productType))
@@ -158,7 +158,7 @@ class ProductServiceLive() extends ProductService {
       existingProduct.description,
       productType,
       newAttributes,
-      entitlements.map(_.name).toList)
+      entitlements.map(_._2.name).toList)
     updatedProduct <- ProductServiceDataStore.fetchProduct(profile, id)
   } yield updatedProduct.map(p => Product.fromTableWithAttributes(p))
 

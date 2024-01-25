@@ -8,12 +8,17 @@ import zio._
 import java.sql.SQLException
 import com.playground.dss.omp.graphql.table.public
 import com.playground.dss.omp.graphql.subgraph.Types.{QueryProductArgs, QueryProductsArgs}
-import com.playground.dss.omp.graphql.table.public.{Entitlement, ProductAttributeValue, ProductWithAttributes}
+import com.playground.dss.omp.graphql.table.public.{
+  Entitlement,
+  ProductAttributeValue,
+  ProductEntitlement,
+  ProductWithAttributes
+}
 import com.playground.dss.omp.graphql.{table, Errors, FixedSnakeCase}
 import io.getquill.jdbczio.Quill
 
 import java.util.UUID
-import scala.collection.immutable.List
+import scala.collection.immutable.{List, Nil}
 
 @SuppressWarnings(Array("org.wartremover.warts.All"))
 class ProductServiceDataStore(override val quill: Quill.Postgres[SnakeCase.type])
@@ -117,11 +122,21 @@ class ProductServiceDataStore(override val quill: Quill.Postgres[SnakeCase.type]
     }
   }
 
+  private def liftTuples[T, U](l: List[T], f: T => Quoted[Any]): Quoted[Query[U]] = {
+    l match {
+      case Nil => sql"""""".as[Query[U]]
+      case head :: Nil => sql"""${f(head)}""".as[Query[U]]
+      case head :: tail => sql"""${f(head)}, ${liftTuples(tail, f)}""".as[Query[U]]
+    }
+  }
+
+  def liftTuples(l: List[(String, Long)]): Quoted[Query[(String, Long)]] =
+    liftTuples(l, (t: (String, Long)) => sql"""(${lift(t._1)}, ${lift(t._2)})""")
+
   def getProductEntitlements(
-      productId: UUID,
       profile: String,
-      prodVersion: Long
-  ): ZIO[Any, SQLException, Seq[Entitlement]] = {
+      productIdVersions: List[(String, Long)]
+  ): ZIO[Any, SQLException, Seq[(String, Entitlement)]] = {
     run {
       for {
         entVersion <-
@@ -130,25 +145,23 @@ class ProductServiceDataStore(override val quill: Quill.Postgres[SnakeCase.type]
         entitlement <-
           query[Entitlement].join(e =>
             e.id == entVersion._1 && e.profile == entVersion._2 && e.version == entVersion._3)
-        _ <- query[public.ProductEntitlement].join(ent =>
-               ent.productId == lift(productId.toString) && ent.profile == lift(profile) && ent.version == lift(
-                 prodVersion) && entitlement.id == ent.entitlementId)
-
-      } yield entitlement
+        productEntitlement <-
+          query[ProductEntitlement].join(ent =>
+            liftTuples(productIdVersions).contains((ent.productId, ent.version)) && ent.entitlementId == entitlement.id)
+      } yield (productEntitlement.productId, entitlement)
     }
   }
 
   def fetchEntitlement(
-                        profile: String,
-                        id: String
-                      ): ZIO[Any, SQLException, Option[Entitlement]] = {
+      profile: String,
+      id: String
+  ): ZIO[Any, SQLException, Option[Entitlement]] = {
     run {
       for {
         entVersion <- query[Entitlement].filter(e => e.id == lift(id) && e.profile == lift(profile))
-          .groupByMap(e => (e.id, e.profile))(e =>
-            (e.id, e.profile, max(e.version)))
+                        .groupByMap(e => (e.id, e.profile))(e => (e.id, e.profile, max(e.version)))
         ent <- query[Entitlement].join(e =>
-          e.id == entVersion._1 && e.profile == entVersion._2 && e.version == entVersion._3)
+                 e.id == entVersion._1 && e.profile == entVersion._2 && e.version == entVersion._3)
       } yield ent
 
     }.map(_.headOption)
@@ -187,11 +200,10 @@ object ProductServiceDataStore {
           )))
 
   def getProductEntitlements(
-      productId: UUID,
       profile: String,
-      productVersion: Long
-  ): ZIO[ProductServiceDataStore, Throwable, Seq[public.Entitlement]] =
-    ZIO.serviceWithZIO[ProductServiceDataStore](_.getProductEntitlements(productId, profile, productVersion))
+      productIdVersions: List[(String, Long)]
+  ): ZIO[ProductServiceDataStore, Throwable, Seq[(String, Entitlement)]] =
+    ZIO.serviceWithZIO[ProductServiceDataStore](_.getProductEntitlements(profile, productIdVersions))
 
   // TODO: Could be in entitlements data store
   def fetchEntitlementsByNames(
@@ -208,18 +220,16 @@ object ProductServiceDataStore {
           )))
 
   def fetchEntitlementById(
-                            profile: String,
-                            entitlementId: String
-                          ): ZIO[ProductServiceDataStore, Throwable, scala.Option[Entitlement]] = {
+      profile: String,
+      entitlementId: String
+  ): ZIO[ProductServiceDataStore, Throwable, scala.Option[Entitlement]] = {
     ZIO.serviceWithZIO[ProductServiceDataStore](_.fetchEntitlement(profile, entitlementId))
       .catchAllCause(cause =>
         ZIO.logErrorCause(s"Failed to retrieve entitlement ${entitlementId}, ", cause) *> ZIO.fail(
           Errors.DataAccessErrorMsg(
             Errors.ErrorCode.DATA_ACCESS_ERROR,
-            s"Failed to retrieve product ${entitlementId} from DB: ${
-              cause.failureOption.map(
-                _.getMessage).getOrElse("")
-            } ")))
+            s"Failed to retrieve product ${entitlementId} from DB: ${cause.failureOption.map(
+              _.getMessage).getOrElse("")} ")))
   }
 
   val layer: ZLayer[Quill.Postgres[SnakeCase.type], Nothing, ProductServiceDataStore] =
