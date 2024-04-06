@@ -60,6 +60,7 @@ class OfferServiceDataStore(val quill: Quill.Postgres[SnakeCase]) extends DataSt
     }
   }
 
+  // fetch all offers where author is "hulu-transform"  and profile is "main"
   def fetchOffers: ZIO[Any, Throwable, Seq[Offer]] = {
     //val version = profileVersionSelector("offer", "main")
     val version = versionSelector("offer", "where profile = 'main' and author='transform'")
